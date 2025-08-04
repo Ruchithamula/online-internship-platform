@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -24,7 +24,11 @@ import {
   FaEnvelope,
   FaCalendarAlt,
   FaCheckCircle,
-  FaTimesCircle
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaShieldAlt,
+  FaClock,
+  FaFileAlt as FaReport
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';
@@ -53,6 +57,8 @@ const AdminDashboard = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [candidateTestToggles, setCandidateTestToggles] = useState({});
+  const [showCandidateReport, setShowCandidateReport] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   // Mock data for demonstration
   const [candidates] = useState([
@@ -67,7 +73,11 @@ const AdminDashboard = () => {
       status: 'passed',
       testStatus: 'completed',
       paymentStatus: 'paid',
-      testsEnabled: true
+      testsEnabled: true,
+      tabSwitches: 0,
+      warnings: 0,
+      timeTaken: 25,
+      autoSubmitted: false
     },
     {
       id: 2,
@@ -80,7 +90,11 @@ const AdminDashboard = () => {
       status: 'passed',
       testStatus: 'completed',
       paymentStatus: 'paid',
-      testsEnabled: true
+      testsEnabled: true,
+      tabSwitches: 1,
+      warnings: 0,
+      timeTaken: 28,
+      autoSubmitted: false
     },
     {
       id: 3,
@@ -93,7 +107,11 @@ const AdminDashboard = () => {
       status: 'failed',
       testStatus: 'completed',
       paymentStatus: 'paid',
-      testsEnabled: false
+      testsEnabled: false,
+      tabSwitches: 3,
+      warnings: 2,
+      timeTaken: 15,
+      autoSubmitted: true
     },
     {
       id: 4,
@@ -106,7 +124,11 @@ const AdminDashboard = () => {
       status: 'passed',
       testStatus: 'completed',
       paymentStatus: 'paid',
-      testsEnabled: true
+      testsEnabled: true,
+      tabSwitches: 0,
+      warnings: 0,
+      timeTaken: 30,
+      autoSubmitted: false
     },
     {
       id: 5,
@@ -119,7 +141,11 @@ const AdminDashboard = () => {
       status: 'failed',
       testStatus: 'completed',
       paymentStatus: 'unpaid',
-      testsEnabled: false
+      testsEnabled: false,
+      tabSwitches: 2,
+      warnings: 1,
+      timeTaken: 22,
+      autoSubmitted: false
     },
     {
       id: 6,
@@ -132,7 +158,11 @@ const AdminDashboard = () => {
       status: 'pending',
       testStatus: 'pending',
       paymentStatus: 'unpaid',
-      testsEnabled: false
+      testsEnabled: false,
+      tabSwitches: 0,
+      warnings: 0,
+      timeTaken: 0,
+      autoSubmitted: false
     },
     {
       id: 7,
@@ -145,7 +175,11 @@ const AdminDashboard = () => {
       status: 'pending',
       testStatus: 'pending',
       paymentStatus: 'paid',
-      testsEnabled: true
+      testsEnabled: true,
+      tabSwitches: 0,
+      warnings: 0,
+      timeTaken: 0,
+      autoSubmitted: false
     }
   ]);
 
@@ -186,7 +220,10 @@ const AdminDashboard = () => {
     totalTests: candidates.reduce((sum, c) => sum + c.attempts, 0),
     passRate: Math.round((candidates.filter(c => c.status === 'passed').length / candidates.length) * 100),
     averageScore: Math.round(candidates.reduce((sum, c) => sum + c.bestScore, 0) / candidates.length),
-    revenue: candidates.length * 295
+    revenue: candidates.length * 295,
+    totalTabSwitches: candidates.reduce((sum, c) => sum + c.tabSwitches, 0),
+    totalWarnings: candidates.reduce((sum, c) => sum + c.warnings, 0),
+    autoSubmittedTests: candidates.filter(c => c.autoSubmitted).length
   };
 
   const meritList = candidates
@@ -224,6 +261,11 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       toast.success('Question deleted successfully!');
     }
+  };
+
+  const handleViewCandidateReport = (candidate) => {
+    setSelectedCandidate(candidate);
+    setShowCandidateReport(true);
   };
 
   const handleDownloadMeritList = async (format) => {
@@ -389,6 +431,7 @@ const AdminDashboard = () => {
           {[
             { id: 'overview', label: 'Overview', icon: FaChartBar },
             { id: 'candidates', label: 'Candidates', icon: FaUsers },
+            { id: 'reports', label: 'Test Reports', icon: FaReport },
             { id: 'merit', label: 'Merit List', icon: FaTrophy },
             { id: 'questions', label: 'Questions', icon: FaCog }
           ].map((tab) => {
@@ -437,6 +480,25 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            {/* Security Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="card text-center">
+                <FaShieldAlt className="text-3xl text-red-500 mx-auto mb-3" />
+                <h3 className="text-2xl font-bold text-primary-dark">{stats.totalTabSwitches}</h3>
+                <p className="text-gray-600">Total Tab Switches</p>
+              </div>
+              <div className="card text-center">
+                <FaExclamationTriangle className="text-3xl text-orange-500 mx-auto mb-3" />
+                <h3 className="text-2xl font-bold text-primary-dark">{stats.totalWarnings}</h3>
+                <p className="text-gray-600">Total Warnings</p>
+              </div>
+              <div className="card text-center">
+                <FaClock className="text-3xl text-red-600 mx-auto mb-3" />
+                <h3 className="text-2xl font-bold text-primary-dark">{stats.autoSubmittedTests}</h3>
+                <p className="text-gray-600">Auto-Submitted Tests</p>
+              </div>
+            </div>
+
             {/* Recent Activity */}
             <div className="card">
               <h2 className="text-xl font-semibold text-primary-dark mb-6">Recent Test Activity</h2>
@@ -475,6 +537,238 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Test Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="space-y-8">
+            {/* Security Overview */}
+            <div className="card">
+              <h2 className="text-xl font-semibold text-primary-dark mb-6">Security Violations Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                  <FaExclamationTriangle className="text-3xl text-red-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-bold text-red-700">{candidates.filter(c => c.tabSwitches > 0).length}</h3>
+                  <p className="text-sm text-red-600">Candidates with Tab Switches</p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <FaExclamationTriangle className="text-3xl text-orange-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-bold text-orange-700">{candidates.filter(c => c.warnings > 0).length}</h3>
+                  <p className="text-sm text-orange-600">Candidates with Warnings</p>
+                </div>
+                <div className="text-center p-4 bg-red-100 rounded-lg border border-red-300">
+                  <FaClock className="text-3xl text-red-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-bold text-red-800">{candidates.filter(c => c.autoSubmitted).length}</h3>
+                  <p className="text-sm text-red-700">Auto-Submitted Tests</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                  <FaCheckCircle className="text-3xl text-green-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-bold text-green-700">{candidates.filter(c => c.tabSwitches === 0 && c.warnings === 0).length}</h3>
+                  <p className="text-sm text-green-600">Clean Tests</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Test Reports */}
+            <div className="card">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-primary-dark">Detailed Test Reports</h2>
+                <div className="relative export-menu-container">
+                  <button 
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    disabled={isExporting}
+                    className="border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center relative"
+                  >
+                    {isExporting ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-dark mr-2"></div>
+                    ) : (
+                      <FaDownload className="mr-2" />
+                    )}
+                    Export Reports
+                    <FaChevronDown className="ml-2" />
+                  </button>
+                  
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleExportUserData('csv')}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <FaFileCsv className="mr-3 text-green-600" />
+                          Export as CSV
+                        </button>
+                        <button
+                          onClick={() => handleExportUserData('excel')}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <FaFileExcel className="mr-3 text-blue-600" />
+                          Export as Excel
+                        </button>
+                        <button
+                          onClick={() => handleExportUserData('json')}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <FaFileAlt className="mr-3 text-purple-600" />
+                          Export as JSON
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Candidate</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Score</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Tab Switches</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Warnings</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Time Taken</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Auto-Submitted</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {candidates.filter(c => c.testStatus === 'completed').map((candidate) => (
+                      <tr key={candidate.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium text-primary-dark">{candidate.name}</p>
+                            <p className="text-sm text-gray-600">{candidate.email}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`font-medium ${candidate.bestScore >= 60 ? 'text-green-600' : 'text-red-600'}`}>
+                            {candidate.bestScore}%
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(candidate.status)}`}>
+                            {candidate.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center">
+                            {candidate.tabSwitches > 0 ? (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                candidate.tabSwitches >= 3 ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                              }`}>
+                                <FaExclamationTriangle className="inline mr-1" />
+                                {candidate.tabSwitches}/3
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <FaCheckCircle className="inline mr-1" />
+                                0/3
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center">
+                            {candidate.warnings > 0 ? (
+                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <FaExclamationTriangle className="inline mr-1" />
+                                {candidate.warnings}/3
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <FaCheckCircle className="inline mr-1" />
+                                0/3
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-sm text-gray-600">
+                            {candidate.timeTaken}m / 30m
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {candidate.autoSubmitted ? (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <FaClock className="inline mr-1" />
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <FaCheckCircle className="inline mr-1" />
+                              No
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button 
+                            onClick={() => handleViewCandidateReport(candidate)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-full hover:bg-blue-100"
+                          >
+                            <FaEye className="text-sm" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Violation Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Tab Switch Analysis */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-primary-dark mb-4">Tab Switch Analysis</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">No Tab Switches</span>
+                    <span className="text-sm font-bold text-green-600">
+                      {candidates.filter(c => c.tabSwitches === 0).length} candidates
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                    <span className="text-sm font-medium">1-2 Tab Switches</span>
+                    <span className="text-sm font-bold text-orange-600">
+                      {candidates.filter(c => c.tabSwitches >= 1 && c.tabSwitches < 3).length} candidates
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                    <span className="text-sm font-medium">3+ Tab Switches (Auto-Submitted)</span>
+                    <span className="text-sm font-bold text-red-600">
+                      {candidates.filter(c => c.tabSwitches >= 3).length} candidates
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning Analysis */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-primary-dark mb-4">Warning Analysis</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">No Warnings</span>
+                    <span className="text-sm font-bold text-green-600">
+                      {candidates.filter(c => c.warnings === 0).length} candidates
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                    <span className="text-sm font-medium">1-2 Warnings</span>
+                    <span className="text-sm font-bold text-orange-600">
+                      {candidates.filter(c => c.warnings >= 1 && c.warnings < 3).length} candidates
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                    <span className="text-sm font-medium">3+ Warnings (Auto-Submitted)</span>
+                    <span className="text-sm font-bold text-red-600">
+                      {candidates.filter(c => c.warnings >= 3).length} candidates
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -617,6 +911,36 @@ const AdminDashboard = () => {
                             <span className="text-xs sm:text-sm font-medium text-gray-700">Attempts:</span>
                             <span className="font-bold text-[#D4AF37]">{candidate.attempts}</span>
                           </div>
+                          
+                          {/* Security Information */}
+                          <div className="pt-2 border-t border-amber-200 space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-xs sm:text-sm font-medium text-gray-700">Tab Switches:</span>
+                              <span className={`text-xs font-medium ${
+                                candidate.tabSwitches === 0 ? 'text-green-600' : 
+                                candidate.tabSwitches >= 3 ? 'text-red-600' : 'text-orange-600'
+                              }`}>
+                                {candidate.tabSwitches}/3
+                              </span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-xs sm:text-sm font-medium text-gray-700">Warnings:</span>
+                              <span className={`text-xs font-medium ${
+                                candidate.warnings === 0 ? 'text-green-600' : 
+                                candidate.warnings >= 3 ? 'text-red-600' : 'text-orange-600'
+                              }`}>
+                                {candidate.warnings}/3
+                              </span>
+                            </div>
+                            {candidate.autoSubmitted && (
+                              <div className="flex items-center justify-center">
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <FaClock className="inline mr-1" />
+                                  Auto-Submitted
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </>
                       )}
 
@@ -642,7 +966,10 @@ const AdminDashboard = () => {
                         }`}>
                           {candidate.status.toUpperCase()}
                         </span>
-                        <button className="text-[#D4AF37] hover:text-[#B8941F] transition-colors p-2 rounded-full hover:bg-amber-100">
+                        <button 
+                          onClick={() => handleViewCandidateReport(candidate)}
+                          className="text-[#D4AF37] hover:text-[#B8941F] transition-colors p-2 rounded-full hover:bg-amber-100"
+                        >
                           <FaEye className="text-sm" />
                         </button>
                       </div>
@@ -897,6 +1224,205 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Candidate Report Modal */}
+      {showCandidateReport && selectedCandidate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-primary-dark">
+                  Test Report - {selectedCandidate.name}
+                </h3>
+                <button
+                  onClick={() => setShowCandidateReport(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <FaTimesCircle className="text-xl" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-primary-dark">Basic Information</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Name:</span>
+                      <span className="text-gray-900">{selectedCandidate.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Email:</span>
+                      <span className="text-gray-900">{selectedCandidate.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Test Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(selectedCandidate.status)}`}>
+                        {selectedCandidate.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Payment Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedCandidate.paymentStatus === 'paid' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedCandidate.paymentStatus.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Test Performance */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-primary-dark">Test Performance</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Best Score:</span>
+                      <span className={`font-bold ${selectedCandidate.bestScore >= 60 ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedCandidate.bestScore}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Percentile:</span>
+                      <span className="font-bold text-[#D4AF37]">P{selectedCandidate.percentile}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Attempts:</span>
+                      <span className="font-bold text-[#D4AF37]">{selectedCandidate.attempts}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Time Taken:</span>
+                      <span className="text-gray-900">{selectedCandidate.timeTaken}m / 30m</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Analysis */}
+              <div className="mt-8">
+                <h4 className="text-lg font-semibold text-primary-dark mb-4">Security Analysis</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Tab Switch Analysis */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center mb-3">
+                      <FaExclamationTriangle className="text-red-500 mr-2" />
+                      <h5 className="font-semibold text-gray-800">Tab Switch Activity</h5>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Tab Switches:</span>
+                        <span className={`text-sm font-medium ${
+                          selectedCandidate.tabSwitches === 0 ? 'text-green-600' : 
+                          selectedCandidate.tabSwitches >= 3 ? 'text-red-600' : 'text-orange-600'
+                        }`}>
+                          {selectedCandidate.tabSwitches}/3
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className={`text-sm font-medium ${
+                          selectedCandidate.tabSwitches === 0 ? 'text-green-600' : 
+                          selectedCandidate.tabSwitches >= 3 ? 'text-red-600' : 'text-orange-600'
+                        }`}>
+                          {selectedCandidate.tabSwitches === 0 ? 'Clean' : 
+                           selectedCandidate.tabSwitches >= 3 ? 'Violation' : 'Warning'}
+                        </span>
+                      </div>
+                      {selectedCandidate.tabSwitches > 0 && (
+                        <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                          <p className="text-xs text-red-700">
+                            <strong>Note:</strong> {selectedCandidate.tabSwitches >= 3 ? 
+                              'Test was auto-submitted due to 3 tab switches.' : 
+                              `${3 - selectedCandidate.tabSwitches} more tab switch${3 - selectedCandidate.tabSwitches === 1 ? '' : 'es'} would have triggered auto-submission.`
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Warning Analysis */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center mb-3">
+                      <FaExclamationTriangle className="text-orange-500 mr-2" />
+                      <h5 className="font-semibold text-gray-800">Warning Activity</h5>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Warnings:</span>
+                        <span className={`text-sm font-medium ${
+                          selectedCandidate.warnings === 0 ? 'text-green-600' : 
+                          selectedCandidate.warnings >= 3 ? 'text-red-600' : 'text-orange-600'
+                        }`}>
+                          {selectedCandidate.warnings}/3
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className={`text-sm font-medium ${
+                          selectedCandidate.warnings === 0 ? 'text-green-600' : 
+                          selectedCandidate.warnings >= 3 ? 'text-red-600' : 'text-orange-600'
+                        }`}>
+                          {selectedCandidate.warnings === 0 ? 'Clean' : 
+                           selectedCandidate.warnings >= 3 ? 'Violation' : 'Warning'}
+                        </span>
+                      </div>
+                      {selectedCandidate.warnings > 0 && (
+                        <div className="mt-3 p-3 bg-orange-50 rounded-lg">
+                          <p className="text-xs text-orange-700">
+                            <strong>Note:</strong> {selectedCandidate.warnings >= 3 ? 
+                              'Test was auto-submitted due to 3 warnings.' : 
+                              `${3 - selectedCandidate.warnings} more warning${3 - selectedCandidate.warnings === 1 ? '' : 's'} would have triggered auto-submission.`
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Auto-Submission Status */}
+              {selectedCandidate.autoSubmitted && (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center">
+                    <FaClock className="text-red-600 mr-3" />
+                    <div>
+                      <h5 className="font-semibold text-red-800">Test Auto-Submitted</h5>
+                      <p className="text-sm text-red-700">
+                        This test was automatically submitted due to security violations. 
+                        The candidate exceeded the maximum allowed tab switches or warnings.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowCandidateReport(false)}
+                  className="btn-outline px-6 py-2"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle download individual report
+                    toast.success('Individual report download feature coming soon!');
+                  }}
+                  className="btn-secondary px-6 py-2"
+                >
+                  <FaDownload className="mr-2" />
+                  Download Report
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ const TestInterface = () => {
     answers, 
     timeRemaining, 
     warnings, 
+    tabSwitches,
     testStarted,
     submitAnswer, 
     nextQuestion, 
@@ -20,11 +21,13 @@ const TestInterface = () => {
     goToQuestion, 
     updateTimer, 
     addWarning, 
+    addTabSwitch,
     completeTest 
   } = useTest();
 
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
+  const [showTabSwitchWarning, setShowTabSwitchWarning] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   // Redirect if test hasn't been started or no questions available
@@ -58,8 +61,10 @@ const TestInterface = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        addWarning();
-        toast.error('Warning: Tab switching detected!');
+        addTabSwitch();
+        if (tabSwitches === 1) { // This will be 2 after addTabSwitch is called
+          setShowTabSwitchWarning(true);
+        }
       }
     };
 
@@ -114,7 +119,7 @@ const TestInterface = () => {
       document.removeEventListener('click', handleActivity);
       clearInterval(inactivityTimer);
     };
-  }, [addWarning, lastActivity]);
+  }, [addWarning, lastActivity, tabSwitches, addTabSwitch]);
 
   // Auto-save answers
   useEffect(() => {
@@ -196,7 +201,27 @@ const TestInterface = () => {
               <h1 className="text-xl font-bold text-primary-dark ml-3">Web Development Assessment Test</h1>
             </div>
             
+            {/* Tab Switch Warning */}
+            {tabSwitches === 0 && (
+              <div className="hidden md:block text-xs text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                ⚠️ Test will auto-submit after 3 tab switches
+              </div>
+            )}
+            {tabSwitches > 0 && tabSwitches < 3 && (
+              <div className="hidden md:block text-xs text-red-700 bg-red-100 px-3 py-1 rounded-full animate-pulse">
+                ⚠️ {3 - tabSwitches} tab switch{3 - tabSwitches === 1 ? '' : 'es'} remaining!
+              </div>
+            )}
+            
             <div className="flex items-center space-x-4">
+                          {/* Tab Switch Counter */}
+            {tabSwitches > 0 && (
+              <div className="flex items-center text-red-600">
+                <FaExclamationTriangle className="mr-1" />
+                <span className="text-sm font-medium">Tab Switches: {tabSwitches}/3</span>
+              </div>
+            )}
+              
               {/* Warnings */}
               {warnings > 0 && (
                 <div className="flex items-center text-warning">
@@ -387,6 +412,33 @@ const TestInterface = () => {
                   className="btn-secondary px-6 py-2"
                 >
                   Submit Test
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Switch Warning Modal */}
+      {showTabSwitchWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <FaExclamationTriangle className="text-red-600 text-2xl mr-3" />
+                <h3 className="text-xl font-bold text-red-600">Final Warning!</h3>
+              </div>
+              
+              <p className="text-gray-700 mb-6">
+                You have switched tabs <strong>2 times</strong>. One more tab switch will automatically submit your test. Please stay on this page to continue your test.
+              </p>
+              
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowTabSwitchWarning(false)}
+                  className="btn-secondary px-6 py-2"
+                >
+                  I Understand
                 </button>
               </div>
             </div>

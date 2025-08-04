@@ -6,15 +6,13 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  razorpayOrderId: {
+  orderId: {
     type: String,
     required: true,
     unique: true
   },
-  razorpayPaymentId: {
-    type: String,
-    required: true,
-    unique: true
+  paymentId: {
+    type: String
   },
   amount: {
     type: Number,
@@ -31,16 +29,20 @@ const paymentSchema = new mongoose.Schema({
   },
   testFee: {
     type: Number,
-    default: 250
+    default: 750
   },
-  gstAmount: {
+  gst: {
     type: Number,
-    default: 45 // 18% of 250
+    default: 135 // 18% of 750
   },
   paymentMethod: {
     type: String,
     enum: ['card', 'upi', 'netbanking'],
-    required: true
+    default: 'card'
+  },
+  testEnabled: {
+    type: Boolean,
+    default: false
   },
   paymentDate: {
     type: Date,

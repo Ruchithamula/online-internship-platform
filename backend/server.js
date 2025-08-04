@@ -464,7 +464,10 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
 app.post('/api/payments/create-order', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const amount = 29500; // ₹295 in paise
+    const testFee = 750;
+    const gst = Math.round(testFee * 0.18); // 18% GST
+    const totalAmount = testFee + gst;
+    const amount = totalAmount * 100; // Convert to paise
 
     const order = await razorpay.orders.create({
       amount,
@@ -472,14 +475,19 @@ app.post('/api/payments/create-order', authenticateToken, async (req, res) => {
       receipt: `test_${userId}_${Date.now()}`,
       notes: {
         userId: userId.toString(),
-        testType: 'internship_assessment'
+        testType: 'internship_assessment',
+        testFee: testFee,
+        gst: gst,
+        totalAmount: totalAmount
       }
     });
 
     const payment = new Payment({
       userId,
       orderId: order.id,
-      amount: amount / 100,
+      amount: totalAmount,
+      testFee: testFee,
+      gst: gst,
       status: 'pending'
     });
 

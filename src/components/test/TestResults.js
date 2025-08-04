@@ -59,6 +59,7 @@ const TestResults = () => {
     passed,
     timeTaken,
     warnings,
+    tabSwitches,
   } = results;
 
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
@@ -155,10 +156,17 @@ const TestResults = () => {
               {passed ? <FaCheckCircle className="mr-2" /> : <FaTimesCircle className="mr-2" />}
               {passed ? 'PASSED' : 'FAILED'}
             </div>
+            
+            {tabSwitches >= 3 && (
+              <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                <FaExclamationTriangle className="mr-2" />
+                Test auto-submitted due to 3 tab switches
+              </div>
+            )}
           </div>
 
           {/* Score Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <FaChartBar className="text-3xl text-blue-500 mx-auto mb-3" />
               <h3 className="font-semibold text-blue-800">Score</h3>
@@ -178,6 +186,13 @@ const TestResults = () => {
               <h3 className="font-semibold text-yellow-800">Warnings</h3>
               <p className="text-2xl font-bold text-yellow-600">
                 {warnings}/3
+              </p>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <FaExclamationTriangle className="text-3xl text-red-500 mx-auto mb-3" />
+              <h3 className="font-semibold text-red-800">Tab Switches</h3>
+              <p className="text-2xl font-bold text-red-600">
+                {tabSwitches}/3
               </p>
             </div>
           </div>

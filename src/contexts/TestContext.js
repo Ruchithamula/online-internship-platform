@@ -13,6 +13,7 @@ const initialState = {
   testCompleted: false,
   results: null,
   warnings: 0,
+  tabSwitches: 0,
   suspiciousActivity: false,
   autoSaveEnabled: true,
   loading: false,
@@ -33,6 +34,7 @@ const testReducer = (state, action) => {
         currentQuestionIndex: 0,
         answers: {},
         warnings: 0,
+        tabSwitches: 0,
         suspiciousActivity: false,
       };
     
@@ -77,6 +79,12 @@ const testReducer = (state, action) => {
         ...state,
         warnings: state.warnings + 1,
         suspiciousActivity: state.warnings + 1 >= 3,
+      };
+    
+    case 'ADD_TAB_SWITCH':
+      return {
+        ...state,
+        tabSwitches: state.tabSwitches + 1,
       };
     
     case 'COMPLETE_TEST':
@@ -533,6 +541,19 @@ export const TestProvider = ({ children }) => {
     }
   };
 
+  // Add tab switch
+  const addTabSwitch = () => {
+    dispatch({ type: 'ADD_TAB_SWITCH' });
+    
+    const newTabSwitchCount = state.tabSwitches + 1;
+    if (newTabSwitchCount >= 3) {
+      toast.error('Test automatically submitted due to 3 tab switches!');
+      completeTest();
+    } else {
+      toast.error(`Warning: Tab switching detected! (${newTabSwitchCount}/3)`);
+    }
+  };
+
   // Complete test and calculate results
   const completeTest = () => {
     const totalQuestions = state.questions.length;
@@ -556,6 +577,7 @@ export const TestProvider = ({ children }) => {
       timeTaken: 1800 - state.timeRemaining,
       completedAt: new Date().toISOString(),
       warnings: state.warnings,
+      tabSwitches: state.tabSwitches,
     };
     
     dispatch({ type: 'COMPLETE_TEST', payload: results });
@@ -586,6 +608,7 @@ export const TestProvider = ({ children }) => {
     goToQuestion,
     updateTimer,
     addWarning,
+    addTabSwitch,
     completeTest,
     autoSave,
     resetTest,

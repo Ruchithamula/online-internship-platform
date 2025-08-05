@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaUserShield, FaArrowLeft, FaUser, FaLock } from 'react-icons/fa';
@@ -7,10 +7,51 @@ import YugaYatraLogo from '../common/YugaYatraLogo';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { adminLogin, loading } = useAuth();
+  const { adminLogin, loading, isAuthenticated, userType } = useAuth();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  // Prevent going back when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (userType === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (userType === 'student') {
+        navigate('/student/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, userType, navigate]);
+
+  // Block browser back button when authenticated
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isAuthenticated) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    const handlePopState = (e) => {
+      if (isAuthenticated) {
+        // Prevent going back to login pages
+        window.history.pushState(null, null, window.location.pathname);
+        toast.error('Please logout to access the login page.');
+      }
+    };
+
+    if (isAuthenticated) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('popstate', handlePopState);
+      // Push current state to prevent back navigation
+      window.history.pushState(null, null, window.location.pathname);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isAuthenticated]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +68,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">

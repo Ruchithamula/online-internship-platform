@@ -1,290 +1,141 @@
-# OnlyInternship.in - Deployment Guide
+# Deployment Guide - Online Internship Platform
 
-## 🚀 Complete Deployment Instructions
+This guide provides step-by-step instructions for deploying the Online Internship Platform to various environments.
 
-This guide covers the complete deployment of the OnlyInternship.in platform to production, including frontend, backend, database, and payment integration.
+## 🚀 Quick Start
 
-## 📋 Prerequisites
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+- Git
+- A web server or cloud platform account
 
-### Required Accounts & Services
-- [ ] **Hostinger Shared Hosting** (or VPS)
-- [ ] **MongoDB Atlas** (Cloud Database)
-- [ ] **Razorpay Business Account**
-- [ ] **Gmail/SendGrid** (Email Service)
-- [ ] **Domain: onlyinternship.in**
-- [ ] **SSL Certificate**
+## 📦 Local Development Setup
 
-### Development Environment
-- [ ] Node.js 16+ installed
-- [ ] Git installed
-- [ ] Code editor (VS Code recommended)
-
-## 🏗️ Project Structure
-
-```
-onlyinternship-in/
-├── frontend/                 # React.js Frontend
-│   ├── public/
-│   ├── src/
-│   ├── package.json
-│   └── build/
-├── backend/                  # Node.js Backend
-│   ├── models/
-│   ├── routes/
-│   ├── server.js
-│   └── package.json
-├── docs/                     # Documentation
-├── README.md
-└── DEPLOYMENT.md
+### 1. Clone and Install
+```bash
+git clone https://github.com/Ruchithamula/online-internship-platform1.git
+cd online-internship-platform1
+npm install
+cd backend && npm install && cd ..
 ```
 
-## 🔧 Phase 1: Environment Setup
+### 2. Start Development Servers
+```bash
+# Terminal 1: Start Backend
+cd backend
+npm start
 
-### 1.1 Frontend Environment Variables
-Create `.env` file in frontend directory:
-
-```env
-REACT_APP_API_URL=https://api.onlyinternship.in
-REACT_APP_RAZORPAY_KEY=rzp_live_YOUR_LIVE_KEY
-REACT_APP_RAZORPAY_SECRET=YOUR_LIVE_SECRET
-REACT_APP_GA_TRACKING_ID=G-XXXXXXXXXX
+# Terminal 2: Start Frontend
+npm start
 ```
 
-### 1.2 Backend Environment Variables
-Create `.env` file in backend directory:
+### 3. Access Application
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
 
-```env
-# Server Configuration
-PORT=5000
-NODE_ENV=production
+## ☁️ Cloud Deployment Options
 
-# MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/onlyinternship
+### Option 1: Heroku Deployment
 
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key-here
-JWT_EXPIRES_IN=24h
-
-# Razorpay Configuration
-RAZORPAY_KEY_ID=rzp_live_YOUR_LIVE_KEY
-RAZORPAY_KEY_SECRET=YOUR_LIVE_SECRET
-RAZORPAY_WEBHOOK_SECRET=YOUR_WEBHOOK_SECRET
-
-# Email Configuration (Gmail)
-EMAIL_USER=noreply@onlyinternship.in
-EMAIL_PASS=your-app-specific-password
-EMAIL_SERVICE=gmail
-
-# Frontend URL
-FRONTEND_URL=https://onlyinternship.in
-
-# Security
-CORS_ORIGIN=https://onlyinternship.in
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-```
-
-## 🗄️ Phase 2: Database Setup
-
-### 2.1 MongoDB Atlas Setup
-
-1. **Create MongoDB Atlas Account**
-   - Go to [MongoDB Atlas](https://www.mongodb.com/atlas)
-   - Create free account
-   - Create new cluster (M0 Free tier)
-
-2. **Database Configuration**
+#### Backend Deployment
+1. **Create Heroku App**
    ```bash
-   # Connect to MongoDB Atlas
-   mongodb+srv://username:password@cluster.mongodb.net/onlyinternship
+   heroku create your-app-name-backend
    ```
 
-3. **Create Collections**
-   ```javascript
-   // Run in MongoDB Compass or Atlas Shell
-   use onlyinternship
-   
-   // Collections will be created automatically by Mongoose
-   // users, questions, tests, payments, results
-   ```
-
-4. **Set Up Database User**
-   - Create database user with read/write permissions
-   - Whitelist your server IP address
-
-### 2.2 Initial Data Setup
-
-```javascript
-// Create admin user
-db.users.insertOne({
-  email: "admin@onlyinternship.in",
-  username: "admin",
-  password: "$2a$12$hashedpassword",
-  role: "admin",
-  name: "Admin User",
-  active: true,
-  createdAt: new Date()
-})
-
-// Insert sample questions (35 questions)
-// Use the question bank from src/utils/questionBank.js
-```
-
-## 💳 Phase 3: Payment Integration
-
-### 3.1 Razorpay Setup
-
-1. **Create Razorpay Account**
-   - Go to [Razorpay Dashboard](https://dashboard.razorpay.com)
-   - Complete KYC verification
-   - Get live API keys
-
-2. **Configure Webhooks**
-   ```
-   Webhook URL: https://api.onlyinternship.in/api/webhooks/razorpay
-   Events: payment.captured, payment.failed, refund.processed
-   ```
-
-3. **Test Payment Flow**
+2. **Configure Environment Variables**
    ```bash
-   # Test with test keys first
-   REACT_APP_RAZORPAY_KEY=rzp_test_...
-   RAZORPAY_KEY_ID=rzp_test_...
+   heroku config:set NODE_ENV=production
+   heroku config:set JWT_SECRET=your_jwt_secret_here
+   heroku config:set PORT=5000
    ```
 
-### 3.2 GST Compliance
-
-1. **Company Details**
-   - Company: Yuga Yatra Retail (OPC) Private Limited
-   - GST Number: [Add your GST number]
-   - Address: [Add company address]
-
-2. **Invoice Configuration**
-   - Set up automatic invoice generation
-   - Configure GST calculation (18%)
-   - Set up invoice templates
-
-## 📧 Phase 4: Email Configuration
-
-### 4.1 Gmail Setup
-
-1. **Create App Password**
-   - Go to Google Account Settings
-   - Enable 2-factor authentication
-   - Generate app-specific password
-
-2. **Configure Nodemailer**
-   ```javascript
-   const transporter = nodemailer.createTransporter({
-     service: 'gmail',
-     auth: {
-       user: 'noreply@onlyinternship.in',
-       pass: 'your-app-specific-password'
-     }
-   });
-   ```
-
-### 4.2 Email Templates
-
-Create email templates for:
-- OTP verification
-- Test results
-- Payment confirmation
-- Refund confirmation
-- Welcome emails
-
-## 🌐 Phase 5: Domain & SSL Setup
-
-### 5.1 Domain Configuration
-
-1. **Purchase Domain**
-   - Buy `onlyinternship.in` from domain registrar
-   - Set up DNS records
-
-2. **DNS Configuration**
-   ```
-   A Record: @ → Your server IP
-   CNAME: www → onlyinternship.in
-   CNAME: api → api.onlyinternship.in
-   ```
-
-### 5.2 SSL Certificate
-
-1. **Let's Encrypt SSL**
+3. **Deploy Backend**
    ```bash
-   # Install Certbot
-   sudo apt-get install certbot
-   
-   # Generate SSL certificate
-   sudo certbot certonly --standalone -d onlyinternship.in -d www.onlyinternship.in
+   cd backend
+   git init
+   git add .
+   git commit -m "Initial backend deployment"
+   heroku git:remote -a your-app-name-backend
+   git push heroku main
    ```
 
-2. **Auto-renewal**
+#### Frontend Deployment
+1. **Build Production Version**
    ```bash
-   # Add to crontab
-   0 12 * * * /usr/bin/certbot renew --quiet
-   ```
-
-## 🖥️ Phase 6: Server Deployment
-
-### 6.1 Hostinger Shared Hosting
-
-1. **Upload Frontend**
-   ```bash
-   # Build React app
-   cd frontend
    npm run build
-   
-   # Upload build folder to public_html
    ```
 
-2. **Configure .htaccess**
-   ```apache
-   RewriteEngine On
-   RewriteBase /
-   RewriteRule ^index\.html$ - [L]
-   RewriteCond %{REQUEST_FILENAME} !-f
-   RewriteCond %{REQUEST_FILENAME} !-d
-   RewriteRule . /index.html [L]
-   ```
+2. **Deploy to Netlify/Vercel**
+   - Connect your GitHub repository
+   - Set build command: `npm run build`
+   - Set publish directory: `build`
+   - Configure environment variables for API URL
 
-### 6.2 VPS Deployment (Alternative)
+### Option 2: Vercel Deployment
 
-1. **Server Setup**
+#### Full Stack Deployment
+1. **Install Vercel CLI**
    ```bash
-   # Update system
-   sudo apt update && sudo apt upgrade -y
-   
-   # Install Node.js
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   
-   # Install PM2
-   sudo npm install -g pm2
+   npm i -g vercel
    ```
 
-2. **Deploy Backend**
+2. **Deploy**
    ```bash
-   # Clone repository
-   git clone https://github.com/your-org/onlyinternship-backend.git
-   cd onlyinternship-backend
-   
-   # Install dependencies
+   vercel
+   ```
+
+3. **Configure Environment Variables**
+   - Go to Vercel Dashboard
+   - Set `REACT_APP_API_URL` to your backend URL
+   - Set `JWT_SECRET` for backend
+
+### Option 3: AWS Deployment
+
+#### EC2 Instance Setup
+1. **Launch EC2 Instance**
+   - Choose Ubuntu Server
+   - Configure Security Groups (ports 22, 80, 443, 3000, 5000)
+
+2. **Install Dependencies**
+   ```bash
+   sudo apt update
+   sudo apt install nodejs npm nginx
+   ```
+
+3. **Deploy Application**
+   ```bash
+   git clone https://github.com/Ruchithamula/online-internship-platform1.git
+   cd online-internship-platform1
    npm install
-   
-   # Start with PM2
-   pm2 start server.js --name "onlyinternship-api"
+   cd backend && npm install
+   ```
+
+4. **Configure PM2**
+   ```bash
+   npm install -g pm2
+   pm2 start backend/server.js --name "internship-backend"
    pm2 startup
    pm2 save
    ```
 
-3. **Configure Nginx**
+5. **Configure Nginx**
+   ```bash
+   sudo nano /etc/nginx/sites-available/internship-platform
+   ```
+
    ```nginx
    server {
        listen 80;
-       server_name api.onlyinternship.in;
-       
+       server_name your-domain.com;
+
        location / {
+           root /var/www/internship-platform/build;
+           try_files $uri $uri/ /index.html;
+       }
+
+       location /api {
            proxy_pass http://localhost:5000;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
@@ -295,204 +146,212 @@ Create email templates for:
    }
    ```
 
-## 🔒 Phase 7: Security Configuration
+6. **Enable Site**
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/internship-platform /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
 
-### 7.1 Security Headers
+## 🔧 Environment Configuration
 
+### Backend Environment Variables
+```env
+NODE_ENV=production
+PORT=5000
+JWT_SECRET=your_secure_jwt_secret_here
+DATABASE_PATH=./database.sqlite
+CORS_ORIGIN=https://your-frontend-domain.com
+```
+
+### Frontend Environment Variables
+```env
+REACT_APP_API_URL=https://your-backend-domain.com
+REACT_APP_ENVIRONMENT=production
+```
+
+## 🗄️ Database Setup
+
+### SQLite (Default)
+- Database file is automatically created
+- No additional setup required
+- Backup regularly for production
+
+### PostgreSQL (Optional)
+1. **Install PostgreSQL**
+2. **Create Database**
+   ```sql
+   CREATE DATABASE internship_platform;
+   CREATE USER internship_user WITH PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE internship_platform TO internship_user;
+   ```
+
+3. **Update Backend Configuration**
+   ```javascript
+   // Update database connection in server.js
+   const { Pool } = require('pg');
+   const pool = new Pool({
+     connectionString: process.env.DATABASE_URL,
+   });
+   ```
+
+## 🔒 Security Configuration
+
+### SSL/HTTPS Setup
+1. **Obtain SSL Certificate**
+   - Use Let's Encrypt (free)
+   - Or purchase from certificate authority
+
+2. **Configure Nginx SSL**
+   ```nginx
+   server {
+       listen 443 ssl;
+       server_name your-domain.com;
+       
+       ssl_certificate /path/to/certificate.crt;
+       ssl_certificate_key /path/to/private.key;
+       
+       # ... rest of configuration
+   }
+   ```
+
+### Security Headers
 ```javascript
 // In backend/server.js
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "https://checkout.razorpay.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
     },
   },
 }));
 ```
 
-### 7.2 Rate Limiting
+## 📊 Monitoring and Logging
 
+### Application Monitoring
+1. **PM2 Monitoring**
+   ```bash
+   pm2 monit
+   pm2 logs
+   ```
+
+2. **Nginx Logs**
+   ```bash
+   sudo tail -f /var/log/nginx/access.log
+   sudo tail -f /var/log/nginx/error.log
+   ```
+
+### Health Checks
 ```javascript
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP'
+// Add to backend/server.js
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 ```
 
-### 7.3 CORS Configuration
+## 🔄 CI/CD Pipeline
 
-```javascript
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+### GitHub Actions Workflow
+```yaml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        
+    - name: Install Dependencies
+      run: |
+        npm install
+        cd backend && npm install
+        
+    - name: Build Frontend
+      run: npm run build
+      
+    - name: Deploy to Server
+      run: |
+        # Add your deployment commands here
+        echo "Deploying to production..."
 ```
 
-## 📊 Phase 8: Monitoring & Analytics
+## 🚨 Troubleshooting
 
-### 8.1 Google Analytics
+### Common Issues
 
-1. **Set up GA4**
-   - Create Google Analytics account
-   - Add tracking code to frontend
-   - Configure goals and events
-
-2. **Track Key Events**
-   - User registrations
-   - Test completions
-   - Payment conversions
-   - Page views
-
-### 8.2 Error Monitoring
-
-1. **Sentry Integration**
+1. **Port Already in Use**
    ```bash
-   npm install @sentry/node @sentry/tracing
+   sudo lsof -i :5000
+   sudo kill -9 <PID>
    ```
 
-2. **Logging Setup**
-   ```javascript
-   const winston = require('winston');
-   
-   const logger = winston.createLogger({
-     level: 'info',
-     format: winston.format.json(),
-     transports: [
-       new winston.transports.File({ filename: 'error.log', level: 'error' }),
-       new winston.transports.File({ filename: 'combined.log' })
-     ]
-   });
-   ```
-
-## 🧪 Phase 9: Testing
-
-### 9.1 Pre-deployment Testing
-
-1. **Frontend Testing**
+2. **Permission Denied**
    ```bash
-   cd frontend
-   npm test
-   npm run build
+   sudo chown -R $USER:$USER /var/www/
+   sudo chmod -R 755 /var/www/
    ```
 
-2. **Backend Testing**
+3. **Database Connection Issues**
    ```bash
-   cd backend
-   npm test
+   # Check SQLite database
+   sqlite3 database.sqlite ".tables"
    ```
 
-3. **Integration Testing**
-   - Test OTP flow
-   - Test payment flow
-   - Test test completion
-   - Test admin functions
-
-### 9.2 Security Testing
-
-1. **Vulnerability Scan**
+4. **Build Failures**
    ```bash
-   npm audit
-   npm audit fix
+   # Clear cache and reinstall
+   rm -rf node_modules package-lock.json
+   npm install
    ```
 
-2. **Penetration Testing**
-   - Test authentication
-   - Test authorization
-   - Test input validation
-   - Test SQL injection
+## 📞 Support
 
-## 🚀 Phase 10: Go Live
+For deployment issues:
+1. Check the logs: `pm2 logs` or `docker logs`
+2. Verify environment variables
+3. Test database connectivity
+4. Check firewall and security group settings
+5. Create an issue in the GitHub repository
 
-### 10.1 Final Checklist
+## 🔄 Backup Strategy
 
-- [ ] All environment variables configured
-- [ ] Database populated with questions
-- [ ] Payment gateway tested
-- [ ] Email service working
-- [ ] SSL certificate installed
-- [ ] Domain pointing to server
-- [ ] Monitoring tools active
-- [ ] Backup strategy in place
-
-### 10.2 Launch Steps
-
-1. **Switch to Live Keys**
-   ```env
-   RAZORPAY_KEY_ID=rzp_live_...
-   REACT_APP_RAZORPAY_KEY=rzp_live_...
-   ```
-
-2. **Update DNS Records**
-   - Point domain to live server
-   - Wait for DNS propagation (24-48 hours)
-
-3. **Monitor Performance**
-   - Check server response times
-   - Monitor error rates
-   - Track user registrations
-
-### 10.3 Post-Launch
-
-1. **Performance Optimization**
-   - Enable CDN for static assets
-   - Implement caching strategies
-   - Optimize database queries
-
-2. **Regular Maintenance**
-   - Weekly security updates
-   - Monthly backup verification
-   - Quarterly performance review
-
-## 📞 Support & Maintenance
-
-### Contact Information
-- **Technical Support**: tech@onlyinternship.in
-- **Business Inquiries**: business@onlyinternship.in
-- **Emergency**: +91-XXXXXXXXXX
-
-### Maintenance Schedule
-- **Daily**: Monitor logs and performance
-- **Weekly**: Security updates and backups
-- **Monthly**: Performance optimization
-- **Quarterly**: Security audit and penetration testing
-
-## 🔄 Backup & Recovery
-
-### 1. Database Backup
+### Database Backup
 ```bash
-# Automated MongoDB backup
-mongodump --uri="mongodb+srv://username:password@cluster.mongodb.net/onlyinternship" --out=/backup/$(date +%Y%m%d)
+# Create backup script
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+cp database.sqlite backup/database_$DATE.sqlite
 ```
 
-### 2. File Backup
+### File Backup
 ```bash
-# Backup application files
-tar -czf backup-$(date +%Y%m%d).tar.gz /var/www/onlyinternship/
+# Backup entire application
+tar -czf backup/app_$(date +%Y%m%d_%H%M%S).tar.gz .
 ```
 
-### 3. Recovery Plan
-1. Restore database from backup
-2. Redeploy application code
-3. Verify all services are running
-4. Test critical functionality
+### Automated Backups
+```bash
+# Add to crontab
+0 2 * * * /path/to/backup-script.sh
+```
 
 ---
 
-## 🎉 Congratulations!
-
-Your OnlyInternship.in platform is now live and ready to serve students and administrators. Remember to:
-
-- Monitor the platform regularly
-- Keep security patches updated
-- Maintain regular backups
-- Gather user feedback for improvements
-- Scale infrastructure as needed
-
-For any issues or questions, refer to the documentation or contact the support team. 
+**Note:** Always test your deployment in a staging environment before deploying to production. Keep your dependencies updated and monitor your application regularly for security updates. 

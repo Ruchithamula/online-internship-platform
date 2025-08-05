@@ -1,13 +1,12 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -31,26 +30,163 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/onlyinternship', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+// SQLite Database setup
+const dbPath = path.join(__dirname, 'database.sqlite');
+const db = new sqlite3.Database(dbPath);
 
-// Models
-const User = require('./models/User');
-const Question = require('./models/Question');
-const Test = require('./models/Test');
-const Payment = require('./models/Payment');
-const Result = require('./models/Result');
+// Initialize database tables
+const initializeDatabase = () => {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      // Users table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          name TEXT,
+          password TEXT,
+          phone TEXT,
+          college TEXT,
+          role TEXT DEFAULT 'student',
+          otp TEXT,
+          otp_expiry DATETIME,
+          profile_complete BOOLEAN DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-// Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+      // Questions table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS questions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          text TEXT NOT NULL,
+          options TEXT NOT NULL,
+          correct_answer INTEGER NOT NULL,
+          difficulty TEXT NOT NULL,
+          category TEXT NOT NULL,
+          active BOOLEAN DEFAULT 1,
+          created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Tests table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS tests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+          end_time DATETIME,
+          status TEXT DEFAULT 'active',
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Test Questions table (many-to-many relationship)
+      db.run(`
+        CREATE TABLE IF NOT EXISTS test_questions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          test_id INTEGER NOT NULL,
+          question_id INTEGER NOT NULL,
+          FOREIGN KEY (test_id) REFERENCES tests (id),
+          FOREIGN KEY (question_id) REFERENCES questions (id)
+        )
+      `);
+
+      // Results table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS results (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          test_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          score INTEGER NOT NULL,
+          correct_answers INTEGER NOT NULL,
+          total_questions INTEGER NOT NULL,
+          passed BOOLEAN NOT NULL,
+          time_taken TEXT,
+          warnings INTEGER DEFAULT 0,
+          answers TEXT,
+          submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (test_id) REFERENCES tests (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Insert default admin user if not exists
+      db.get("SELECT id FROM users WHERE email = 'admin@onlyinternship.in'", (err, row) => {
+        if (!row) {
+          bcrypt.hash('admin123', 10, (err, hash) => {
+            if (!err) {
+              db.run(`
+                INSERT INTO users (email, name, password, role) 
+                VALUES ('admin@onlyinternship.in', 'Admin', ?, 'admin')
+              `, [hash]);
+            }
+          });
+        }
+      });
+
+      // Insert sample questions if not exists
+      db.get("SELECT COUNT(*) as count FROM questions", (err, row) => {
+        if (row && row.count === 0) {
+          const sampleQuestions = [
+            {
+              text: "What is the primary purpose of version control systems like Git?",
+              options: JSON.stringify([
+                "To backup files automatically",
+                "To track changes and collaborate on code",
+                "To compile code faster",
+                "To debug code automatically"
+              ]),
+              correct_answer: 1,
+              difficulty: "easy",
+              category: "Software Development"
+            },
+            {
+              text: "Which of the following is NOT a JavaScript framework?",
+              options: JSON.stringify([
+                "React",
+                "Angular",
+                "Vue.js",
+                "Django"
+              ]),
+              correct_answer: 3,
+              difficulty: "easy",
+              category: "Web Development"
+            },
+            {
+              text: "What does API stand for?",
+              options: JSON.stringify([
+                "Application Programming Interface",
+                "Advanced Programming Interface",
+                "Automated Programming Interface",
+                "Application Process Integration"
+              ]),
+              correct_answer: 0,
+              difficulty: "easy",
+              category: "Software Development"
+            }
+          ];
+
+          sampleQuestions.forEach(q => {
+            db.run(`
+              INSERT INTO questions (text, options, correct_answer, difficulty, category)
+              VALUES (?, ?, ?, ?, ?)
+            `, [q.text, q.options, q.correct_answer, q.difficulty, q.category]);
+          });
+        }
+      });
+
+      resolve();
+    });
+  });
+};
+
+// Initialize database
+initializeDatabase()
+  .then(() => console.log('SQLite database initialized'))
+  .catch(err => console.error('Database initialization error:', err));
 
 // Email transporter
 const transporter = nodemailer.createTransporter({
@@ -70,7 +206,7 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid token' });
     }
@@ -96,103 +232,50 @@ app.get('/api/health', (req, res) => {
 });
 
 // Authentication routes
-app.post('/api/auth/send-otp', async (req, res) => {
+app.post('/api/auth/student-login', async (req, res) => {
   try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Save or update user with OTP
-    await User.findOneAndUpdate(
-      { email },
-      { 
-        email,
-        otp,
-        otpExpiry,
-        lastOtpSent: new Date()
-      },
-      { upsert: true, new: true }
-    );
-
-    // Send OTP email
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'OTP for Login - OnlyInternship.in',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2C3E50;">OTP Verification</h2>
-          <p>Your OTP is: <strong style="font-size: 24px; color: #E74C3C;">${otp}</strong></p>
-          <p>This OTP is valid for 10 minutes.</p>
-          <p>If you didn't request this OTP, please ignore this email.</p>
-          <hr>
-          <p><small>OnlyInternship.in - Yuga Yatra Retail (OPC) Private Limited</small></p>
-        </div>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.json({ message: 'OTP sent successfully' });
-  } catch (error) {
-    console.error('Error sending OTP:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
-  }
-});
-
-app.post('/api/auth/verify-otp', async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP are required' });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (user.otp !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
-    }
-
-    if (user.otpExpiry < new Date()) {
-      return res.status(400).json({ error: 'OTP expired' });
-    }
-
-    // Clear OTP
-    user.otp = null;
-    user.otpExpiry = null;
-    await user.save();
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role || 'student' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role || 'student',
-        profileComplete: user.profileComplete || false
+    db.get("SELECT * FROM users WHERE email = ? AND role = 'student'", [email], async (err, user) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
       }
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: 'student' },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: 'student',
+          profileComplete: user.profile_complete || false
+        }
+      });
     });
   } catch (error) {
-    console.error('Error verifying OTP:', error);
-    res.status(500).json({ error: 'Failed to verify OTP' });
+    console.error('Error in student login:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -204,32 +287,37 @@ app.post('/api/auth/admin-login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    const user = await User.findOne({ username, role: 'admin' });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.password);
-
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: 'admin' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: 'admin'
+    db.get("SELECT * FROM users WHERE email = ? AND role = 'admin'", [username], async (err, user) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
       }
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: 'admin' },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: 'admin'
+        }
+      });
     });
   } catch (error) {
     console.error('Error in admin login:', error);
@@ -243,26 +331,29 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     const { name, phone, college } = req.body;
     const userId = req.user.userId;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    user.name = name;
-    user.phone = phone;
-    user.college = college;
-    user.profileComplete = true;
-    await user.save();
-
-    res.json({
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        college: user.college,
-        profileComplete: user.profileComplete
+    db.run(`
+      UPDATE users 
+      SET name = ?, phone = ?, college = ?, profile_complete = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [name, phone, college, userId], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to update profile' });
       }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({
+        user: {
+          id: userId,
+          name,
+          phone,
+          college,
+          profileComplete: true
+        }
+      });
     });
   } catch (error) {
     console.error('Error updating profile:', error);
@@ -273,8 +364,17 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
 // Question routes
 app.get('/api/questions', authenticateToken, async (req, res) => {
   try {
-    const questions = await Question.find({ active: true });
-    res.json(questions);
+    db.all("SELECT * FROM questions WHERE active = 1", (err, questions) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to fetch questions' });
+      }
+
+      res.json(questions.map(q => ({
+        ...q,
+        options: JSON.parse(q.options)
+      })));
+    });
   } catch (error) {
     console.error('Error fetching questions:', error);
     res.status(500).json({ error: 'Failed to fetch questions' });
@@ -285,99 +385,97 @@ app.post('/api/questions', authenticateAdmin, async (req, res) => {
   try {
     const { text, options, correctAnswer, difficulty, category } = req.body;
 
-    const question = new Question({
-      text,
-      options,
-      correctAnswer,
-      difficulty,
-      category,
-      createdBy: req.user.userId
-    });
+    db.run(`
+      INSERT INTO questions (text, options, correct_answer, difficulty, category, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [text, JSON.stringify(options), correctAnswer, difficulty, category, req.user.userId], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to create question' });
+      }
 
-    await question.save();
-    res.status(201).json(question);
+      res.status(201).json({
+        id: this.lastID,
+        text,
+        options,
+        correctAnswer,
+        difficulty,
+        category
+      });
+    });
   } catch (error) {
     console.error('Error creating question:', error);
     res.status(500).json({ error: 'Failed to create question' });
   }
 });
 
-app.put('/api/questions/:id', authenticateAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    const question = await Question.findByIdAndUpdate(id, updates, { new: true });
-    if (!question) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    res.json(question);
-  } catch (error) {
-    console.error('Error updating question:', error);
-    res.status(500).json({ error: 'Failed to update question' });
-  }
-});
-
-app.delete('/api/questions/:id', authenticateAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const question = await Question.findByIdAndDelete(id);
-    
-    if (!question) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    res.json({ message: 'Question deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting question:', error);
-    res.status(500).json({ error: 'Failed to delete question' });
-  }
-});
-
-// Test routes
+// Test routes - Modified to skip payment requirement
 app.post('/api/tests/start', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     
-    // Check if user has paid
-    const payment = await Payment.findOne({ 
-      userId, 
-      status: 'completed',
-      testEnabled: true 
-    });
+    // Skip payment check for testing purposes
+    // const payment = await Payment.findOne({ 
+    //   userId, 
+    //   status: 'completed',
+    //   testEnabled: true 
+    // });
 
-    if (!payment) {
-      return res.status(402).json({ error: 'Payment required to start test' });
-    }
+    // if (!payment) {
+    //   return res.status(402).json({ error: 'Payment required to start test' });
+    // }
 
     // Check attempt limit
-    const existingTests = await Test.countDocuments({ userId });
-    if (existingTests >= 3) {
-      return res.status(400).json({ error: 'Maximum attempts reached' });
-    }
+    db.get("SELECT COUNT(*) as count FROM tests WHERE user_id = ?", [userId], (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
 
-    // Generate test questions
-    const questions = await generateTestQuestions();
-    
-    const test = new Test({
-      userId,
-      questions: questions.map(q => q._id),
-      startTime: new Date(),
-      status: 'active'
-    });
+      if (result.count >= 3) {
+        return res.status(400).json({ error: 'Maximum attempts reached' });
+      }
 
-    await test.save();
+      // Generate test questions
+      generateTestQuestions().then(questions => {
+        // Create test
+        db.run(`
+          INSERT INTO tests (user_id, start_time, status)
+          VALUES (?, CURRENT_TIMESTAMP, 'active')
+        `, [userId], function(err) {
+          if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to create test' });
+          }
 
-    res.json({
-      testId: test._id,
-      questions: questions.map(q => ({
-        id: q._id,
-        text: q.text,
-        options: q.options,
-        difficulty: q.difficulty,
-        category: q.category
-      }))
+          const testId = this.lastID;
+
+          // Insert test questions
+          const placeholders = questions.map(() => '(?, ?)').join(',');
+          const values = questions.flatMap(q => [testId, q.id]);
+
+          db.run(`
+            INSERT INTO test_questions (test_id, question_id)
+            VALUES ${placeholders}
+          `, values, function(err) {
+            if (err) {
+              console.error('Database error:', err);
+              return res.status(500).json({ error: 'Failed to assign questions' });
+            }
+
+            res.json({
+              testId,
+              questions: questions.map(q => ({
+                id: q.id,
+                text: q.text,
+                options: JSON.parse(q.options),
+                difficulty: q.difficulty,
+                category: q.category
+              }))
+            });
+          });
+        });
+      });
     });
   } catch (error) {
     console.error('Error starting test:', error);
@@ -391,68 +489,63 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
     const { answers, timeTaken, warnings } = req.body;
     const userId = req.user.userId;
 
-    const test = await Test.findById(id);
-    if (!test || test.userId.toString() !== userId) {
-      return res.status(404).json({ error: 'Test not found' });
-    }
-
-    // Calculate results
-    const questions = await Question.find({ _id: { $in: test.questions } });
-    let correctAnswers = 0;
-
-    questions.forEach((question, index) => {
-      if (answers[question._id] === question.correctAnswer) {
-        correctAnswers++;
+    db.get("SELECT * FROM tests WHERE id = ? AND user_id = ?", [id, userId], (err, test) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
       }
-    });
 
-    const score = Math.round((correctAnswers / questions.length) * 100);
-    const passed = score >= 60;
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
 
-    // Save result
-    const result = new Result({
-      testId: test._id,
-      userId,
-      score,
-      correctAnswers,
-      totalQuestions: questions.length,
-      passed,
-      timeTaken,
-      warnings,
-      answers,
-      submittedAt: new Date()
-    });
+      // Get test questions and calculate results
+      db.all(`
+        SELECT q.* FROM questions q
+        JOIN test_questions tq ON q.id = tq.question_id
+        WHERE tq.test_id = ?
+      `, [id], (err, questions) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Failed to fetch questions' });
+        }
 
-    await result.save();
+        let correctAnswers = 0;
+        questions.forEach(question => {
+          const parsedOptions = JSON.parse(question.options);
+          if (answers[question.id] === parsedOptions[question.correct_answer]) {
+            correctAnswers++;
+          }
+        });
 
-    // Update test status
-    test.status = 'completed';
-    test.endTime = new Date();
-    await test.save();
+        const score = Math.round((correctAnswers / questions.length) * 100);
+        const passed = score >= 60;
 
-    // Send result email
-    const user = await User.findById(userId);
-    if (user && user.email) {
-      await sendTestResultEmail(user.email, {
-        userName: user.name,
-        score,
-        totalQuestions: questions.length,
-        correctAnswers,
-        passed,
-        timeTaken,
-        percentile: calculatePercentile(score)
+        // Save result
+        db.run(`
+          INSERT INTO results (test_id, user_id, score, correct_answers, total_questions, passed, time_taken, warnings, answers)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [id, userId, score, correctAnswers, questions.length, passed, timeTaken, warnings, JSON.stringify(answers)], function(err) {
+          if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to save result' });
+          }
+
+          // Update test status
+          db.run("UPDATE tests SET status = 'completed', end_time = CURRENT_TIMESTAMP WHERE id = ?", [id]);
+
+          res.json({
+            result: {
+              score,
+              correctAnswers,
+              totalQuestions: questions.length,
+              passed,
+              timeTaken,
+              warnings
+            }
+          });
+        });
       });
-    }
-
-    res.json({
-      result: {
-        score,
-        correctAnswers,
-        totalQuestions: questions.length,
-        passed,
-        timeTaken,
-        warnings
-      }
     });
   } catch (error) {
     console.error('Error submitting test:', error);
@@ -460,201 +553,60 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
   }
 });
 
-// Payment routes
-app.post('/api/payments/create-order', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const amount = 29500; // ₹295 in paise
-
-    const order = await razorpay.orders.create({
-      amount,
-      currency: 'INR',
-      receipt: `test_${userId}_${Date.now()}`,
-      notes: {
-        userId: userId.toString(),
-        testType: 'internship_assessment'
-      }
-    });
-
-    const payment = new Payment({
-      userId,
-      orderId: order.id,
-      amount: amount / 100,
-      status: 'pending'
-    });
-
-    await payment.save();
-
-    res.json({
-      id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      receipt: order.receipt
-    });
-  } catch (error) {
-    console.error('Error creating payment order:', error);
-    res.status(500).json({ error: 'Failed to create payment order' });
-  }
-});
-
-app.post('/api/payments/verify', authenticateToken, async (req, res) => {
-  try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest("hex");
-
-    if (expectedSignature === razorpay_signature) {
-      // Payment verified
-      const payment = await Payment.findOne({ orderId: razorpay_order_id });
-      if (payment) {
-        payment.status = 'completed';
-        payment.paymentId = razorpay_payment_id;
-        payment.testEnabled = true;
-        await payment.save();
-      }
-
-      res.json({ verified: true });
-    } else {
-      res.status(400).json({ verified: false });
-    }
-  } catch (error) {
-    console.error('Error verifying payment:', error);
-    res.status(500).json({ error: 'Payment verification failed' });
-  }
-});
-
 // Admin routes
 app.get('/api/admin/candidates', authenticateAdmin, async (req, res) => {
   try {
-    const candidates = await User.aggregate([
-      { $match: { role: { $ne: 'admin' } } },
-      {
-        $lookup: {
-          from: 'results',
-          localField: '_id',
-          foreignField: 'userId',
-          as: 'results'
-        }
-      },
-      {
-        $lookup: {
-          from: 'tests',
-          localField: '_id',
-          foreignField: 'userId',
-          as: 'tests'
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          email: 1,
-          attempts: { $size: '$tests' },
-          bestScore: { $max: '$results.score' },
-          lastAttempt: { $max: '$tests.startTime' },
-          status: {
-            $cond: {
-              if: { $gt: [{ $max: '$results.passed' }, false] },
-              then: 'passed',
-              else: 'failed'
-            }
-          }
-        }
+    db.all(`
+      SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.role,
+        u.created_at,
+        COUNT(t.id) as attempts,
+        MAX(r.score) as best_score,
+        MAX(t.start_time) as last_attempt,
+        CASE 
+          WHEN MAX(r.passed) = 1 THEN 'passed'
+          WHEN COUNT(t.id) > 0 THEN 'failed'
+          ELSE 'pending'
+        END as status
+      FROM users u
+      LEFT JOIN tests t ON u.id = t.user_id
+      LEFT JOIN results r ON t.id = r.test_id
+      WHERE u.role != 'admin'
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `, (err, candidates) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to fetch candidates' });
       }
-    ]);
 
-    res.json(candidates);
+      res.json(candidates);
+    });
   } catch (error) {
     console.error('Error fetching candidates:', error);
     res.status(500).json({ error: 'Failed to fetch candidates' });
   }
 });
 
-app.get('/api/admin/merit-list', authenticateAdmin, async (req, res) => {
-  try {
-    const meritList = await Result.aggregate([
-      { $match: { passed: true } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
-      { $unwind: '$user' },
-      {
-        $project: {
-          _id: 1,
-          userName: '$user.name',
-          userEmail: '$user.email',
-          score: 1,
-          percentile: 1,
-          submittedAt: 1
-        }
-      },
-      { $sort: { score: -1 } },
-      { $limit: 10 }
-    ]);
-
-    res.json(meritList);
-  } catch (error) {
-    console.error('Error fetching merit list:', error);
-    res.status(500).json({ error: 'Failed to fetch merit list' });
-  }
-});
-
 // Utility functions
 async function generateTestQuestions() {
-  const easyQuestions = await Question.find({ difficulty: 'easy', active: true });
-  const moderateQuestions = await Question.find({ difficulty: 'moderate', active: true });
-  const expertQuestions = await Question.find({ difficulty: 'expert', active: true });
-
-  const selectedEasy = easyQuestions.sort(() => 0.5 - Math.random()).slice(0, 12);
-  const selectedModerate = moderateQuestions.sort(() => 0.5 - Math.random()).slice(0, 12);
-  const selectedExpert = expertQuestions.sort(() => 0.5 - Math.random()).slice(0, 11);
-
-  return [...selectedEasy, ...selectedModerate, ...selectedExpert]
-    .sort(() => 0.5 - Math.random());
-}
-
-async function sendTestResultEmail(email, testData) {
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: `Test Results - ${testData.passed ? 'PASSED' : 'FAILED'} - OnlyInternship.in`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2C3E50;">Test Results</h2>
-          <p>Dear ${testData.userName},</p>
-          <p>Your test result: <strong style="color: ${testData.passed ? '#27AE60' : '#E74C3C'};">
-            ${testData.passed ? 'PASSED' : 'FAILED'}
-          </strong></p>
-          <p>Score: ${testData.score}% (${testData.correctAnswers}/${testData.totalQuestions})</p>
-          <p>Percentile: ${testData.percentile}</p>
-          <p>Time taken: ${testData.timeTaken}</p>
-          ${testData.passed ? 
-            '<p><a href="#" style="background: #27AE60; color: white; padding: 10px 20px; text-decoration: none;">Download Certificate</a></p>' :
-            '<p>Better luck next time! You can retake the test.</p>'
-          }
-        </div>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error('Error sending test result email:', error);
-  }
-}
-
-function calculatePercentile(score) {
-  // Mock percentile calculation
-  return Math.round((score / 100) * 100);
+  return new Promise((resolve, reject) => {
+    db.all(`
+      SELECT * FROM questions 
+      WHERE active = 1 
+      ORDER BY RANDOM() 
+      LIMIT 35
+    `, (err, questions) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(questions);
+      }
+    });
+  });
 }
 
 // Error handling middleware

@@ -6,7 +6,8 @@ import {
   FaArrowLeft, 
   FaShieldAlt, 
   FaCheckCircle,
-  FaInfoCircle
+  FaInfoCircle,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';

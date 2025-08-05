@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import toast from 'react-hot-toast';
+import softwareEngineeringQuestions from '../utils/softwareEngineeringQuestions';
+import { useAuth } from './AuthContext';
 
 const TestContext = createContext();
 
@@ -106,355 +108,29 @@ const testReducer = (state, action) => {
   }
 };
 
-// Web Development Questions Database
-const sampleQuestions = [
-  // Easy Questions (20 questions)
-  {
-    id: 1,
-    question: "What does HTML stand for?",
-    options: ["Hyper Trainer Marking Language", "Hyper Text Marketing Language", "Hyper Text Markup Language", "Hyper Text Main Language"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 2,
-    question: "Which tag is used to create a hyperlink in HTML?",
-    options: ["<link>", "<href>", "<a>", "<hyperlink>"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 3,
-    question: "Which property is used in CSS to change the text color of an element?",
-    options: ["font-style", "text-color", "color", "text-style"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 4,
-    question: "Which HTML element is used for inserting a line break?",
-    options: ["<br>", "<lb>", "<break>", "<newline>"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 5,
-    question: "What does CSS stand for?",
-    options: ["Cascading Style Sheets", "Computer Style Sheets", "Creative Style System", "Colorful Style Sheets"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 6,
-    question: "Which tag is used to create a hyperlink in HTML?",
-    options: ["<link>", "<href>", "<a>", "<hyperlink>"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 7,
-    question: "Which property is used in CSS to change the text color of an element?",
-    options: ["font-style", "text-color", "color", "text-style"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 8,
-    question: "Which HTML element is used for inserting a line break?",
-    options: ["<br>", "<lb>", "<break>", "<newline>"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 9,
-    question: "What does CSS stand for?",
-    options: ["Cascading Style Sheets", "Computer Style Sheets", "Creative Style System", "Colorful Style Sheets"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 10,
-    question: "What does HTML stand for?",
-    options: ["Hyper Trainer Marking Language", "Hyper Text Marketing Language", "Hyper Text Markup Language", "Hyper Text Main Language"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 11,
-    question: "Which tag is used to create a hyperlink in HTML?",
-    options: ["<link>", "<href>", "<a>", "<hyperlink>"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 12,
-    question: "Which property is used in CSS to change the text color of an element?",
-    options: ["font-style", "text-color", "color", "text-style"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 13,
-    question: "Which HTML element is used for inserting a line break?",
-    options: ["<br>", "<lb>", "<break>", "<newline>"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 14,
-    question: "What does CSS stand for?",
-    options: ["Cascading Style Sheets", "Computer Style Sheets", "Creative Style System", "Colorful Style Sheets"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 15,
-    question: "What does HTML stand for?",
-    options: ["Hyper Trainer Marking Language", "Hyper Text Marketing Language", "Hyper Text Markup Language", "Hyper Text Main Language"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 16,
-    question: "Which tag is used to create a hyperlink in HTML?",
-    options: ["<link>", "<href>", "<a>", "<hyperlink>"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 17,
-    question: "Which property is used in CSS to change the text color of an element?",
-    options: ["font-style", "text-color", "color", "text-style"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 18,
-    question: "Which HTML element is used for inserting a line break?",
-    options: ["<br>", "<lb>", "<break>", "<newline>"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  {
-    id: 19,
-    question: "What does CSS stand for?",
-    options: ["Cascading Style Sheets", "Computer Style Sheets", "Creative Style System", "Colorful Style Sheets"],
-    correctAnswer: 0,
-    difficulty: "easy",
-    category: "CSS"
-  },
-  {
-    id: 20,
-    question: "What does HTML stand for?",
-    options: ["Hyper Trainer Marking Language", "Hyper Text Marketing Language", "Hyper Text Markup Language", "Hyper Text Main Language"],
-    correctAnswer: 2,
-    difficulty: "easy",
-    category: "HTML"
-  },
-  
-  // Medium Questions (10 questions)
-  {
-    id: 21,
-    question: "Which CSS property controls the text size?",
-    options: ["font-size", "text-size", "font-style", "text-style"],
-    correctAnswer: 0,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  {
-    id: 22,
-    question: "Which HTML tag is used to define an internal style sheet?",
-    options: ["<style>", "<css>", "<script>", "<link>"],
-    correctAnswer: 0,
-    difficulty: "moderate",
-    category: "HTML"
-  },
-  {
-    id: 23,
-    question: "In JavaScript, which keyword is used to declare a variable?",
-    options: ["var", "let", "const", "All of the above"],
-    correctAnswer: 3,
-    difficulty: "moderate",
-    category: "JavaScript"
-  },
-  {
-    id: 24,
-    question: "Which CSS property is used to make text bold?",
-    options: ["font-style", "text-decoration", "font-weight", "text-style"],
-    correctAnswer: 2,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  {
-    id: 25,
-    question: "What does the 'z-index' property in CSS control?",
-    options: ["Zoom level", "Stacking order", "Color saturation", "Image resolution"],
-    correctAnswer: 1,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  {
-    id: 26,
-    question: "Which CSS property controls the text size?",
-    options: ["font-size", "text-size", "font-style", "text-style"],
-    correctAnswer: 0,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  {
-    id: 27,
-    question: "Which HTML tag is used to define an internal style sheet?",
-    options: ["<style>", "<css>", "<script>", "<link>"],
-    correctAnswer: 0,
-    difficulty: "moderate",
-    category: "HTML"
-  },
-  {
-    id: 28,
-    question: "In JavaScript, which keyword is used to declare a variable?",
-    options: ["var", "let", "const", "All of the above"],
-    correctAnswer: 3,
-    difficulty: "moderate",
-    category: "JavaScript"
-  },
-  {
-    id: 29,
-    question: "Which CSS property is used to make text bold?",
-    options: ["font-style", "text-decoration", "font-weight", "text-style"],
-    correctAnswer: 2,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  {
-    id: 30,
-    question: "What does the 'z-index' property in CSS control?",
-    options: ["Zoom level", "Stacking order", "Color saturation", "Image resolution"],
-    correctAnswer: 1,
-    difficulty: "moderate",
-    category: "CSS"
-  },
-  
-  // Hard Questions (10 questions)
-  {
-    id: 31,
-    question: "Which of the following is true about semantic HTML?",
-    options: ["It uses tags for styling only", "It has no effect on SEO", "It provides meaning to the web page structure", "It is deprecated in HTML5"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "HTML"
-  },
-  {
-    id: 32,
-    question: "Which method is used in JavaScript to attach an event to an element?",
-    options: ["addEvent()", "attachEvent()", "addEventListener()", "bindEvent()"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "JavaScript"
-  },
-  {
-    id: 33,
-    question: "What does the 'viewport' meta tag in HTML control?",
-    options: ["Image rendering", "Mobile responsiveness", "Font type", "JavaScript execution"],
-    correctAnswer: 1,
-    difficulty: "expert",
-    category: "HTML"
-  },
-  {
-    id: 34,
-    question: "Which of the following CSS units is relative to the root element?",
-    options: ["em", "px", "rem", "%"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "CSS"
-  },
-  {
-    id: 35,
-    question: "Which ARIA attribute is used to describe a live region in HTML?",
-    options: ["aria-live", "aria-region", "aria-status", "aria-role"],
-    correctAnswer: 0,
-    difficulty: "expert",
-    category: "HTML"
-  },
-  {
-    id: 36,
-    question: "Which of the following is true about semantic HTML?",
-    options: ["It uses tags for styling only", "It has no effect on SEO", "It provides meaning to the web page structure", "It is deprecated in HTML5"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "HTML"
-  },
-  {
-    id: 37,
-    question: "Which method is used in JavaScript to attach an event to an element?",
-    options: ["addEvent()", "attachEvent()", "addEventListener()", "bindEvent()"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "JavaScript"
-  },
-  {
-    id: 38,
-    question: "What does the 'viewport' meta tag in HTML control?",
-    options: ["Image rendering", "Mobile responsiveness", "Font type", "JavaScript execution"],
-    correctAnswer: 1,
-    difficulty: "expert",
-    category: "HTML"
-  },
-  {
-    id: 39,
-    question: "Which of the following CSS units is relative to the root element?",
-    options: ["em", "px", "rem", "%"],
-    correctAnswer: 2,
-    difficulty: "expert",
-    category: "CSS"
-  },
-  {
-    id: 40,
-    question: "Which ARIA attribute is used to describe a live region in HTML?",
-    options: ["aria-live", "aria-region", "aria-status", "aria-role"],
-    correctAnswer: 0,
-    difficulty: "expert",
-    category: "HTML"
-  }
-];
+// Software Engineering questions database
+const sampleQuestions = softwareEngineeringQuestions;
 
 export const TestProvider = ({ children }) => {
   const [state, dispatch] = useReducer(testReducer, initialState);
+  const { user } = useAuth();
 
   // Generate random test questions
   const generateTest = () => {
-    const easyQuestions = sampleQuestions.filter(q => q.difficulty === 'easy');
-    const moderateQuestions = sampleQuestions.filter(q => q.difficulty === 'moderate');
-    const expertQuestions = sampleQuestions.filter(q => q.difficulty === 'expert');
+    const easyQuestions = softwareEngineeringQuestions.filter(q => q.difficulty === 'easy');
+    const moderateQuestions = softwareEngineeringQuestions.filter(q => q.difficulty === 'moderate');
+    const expertQuestions = softwareEngineeringQuestions.filter(q => q.difficulty === 'expert');
 
     // Select random questions based on difficulty distribution
-    // 20 easy questions (50%), 10 moderate (25%), 10 expert (25%)
-    const selectedEasy = easyQuestions.sort(() => 0.5 - Math.random()).slice(0, 20);
-    const selectedModerate = moderateQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
-    const selectedExpert = expertQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+    const selectedEasy = easyQuestions.sort(() => 0.5 - Math.random()).slice(0, 18);
+    const selectedModerate = moderateQuestions.sort(() => 0.5 - Math.random()).slice(0, 11);
+    const selectedExpert = expertQuestions.sort(() => 0.5 - Math.random()).slice(0, 6);
 
     const allQuestions = [...selectedEasy, ...selectedModerate, ...selectedExpert];
     
-    // Shuffle the final array and ensure we have exactly 40 questions
-    const shuffledQuestions = allQuestions.sort(() => 0.5 - Math.random());
-    return shuffledQuestions.slice(0, 40);
+    // Shuffle the final array and ensure we have exactly 35 questions
+    const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 35);
   };
 
   // Start test
@@ -468,9 +144,9 @@ export const TestProvider = ({ children }) => {
       const questions = generateTest();
       const test = {
         id: 'test_' + Date.now(),
-        title: 'Web Development Assessment Test',
+        title: 'Internship Assessment Test',
         duration: 1800, // 30 minutes
-        totalQuestions: 40,
+        totalQuestions: 35,
         startTime: new Date().toISOString(),
       };
       
@@ -480,11 +156,11 @@ export const TestProvider = ({ children }) => {
       });
       
       toast.success('Test started! Good luck!');
-      return true; // Return success status
+      return true; // Return success
       
     } catch (error) {
       toast.error('Failed to start test. Please try again.');
-      return false; // Return failure status
+      return false; // Return failure
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -538,7 +214,7 @@ export const TestProvider = ({ children }) => {
     const totalQuestions = state.questions.length;
     let correctAnswers = 0;
     
-    state.questions.forEach((question) => {
+    state.questions.forEach((question, index) => {
       const userAnswer = state.answers[question.id];
       if (userAnswer === question.correctAnswer) {
         correctAnswers++;
@@ -546,7 +222,7 @@ export const TestProvider = ({ children }) => {
     });
     
     const score = Math.round((correctAnswers / totalQuestions) * 100);
-    const passed = score >= 60; // 60% passing criteria (24/40 questions)
+    const passed = score >= 60; // 60% passing criteria
     
     const results = {
       score,
@@ -556,9 +232,39 @@ export const TestProvider = ({ children }) => {
       timeTaken: 1800 - state.timeRemaining,
       completedAt: new Date().toISOString(),
       warnings: state.warnings,
+      answers: state.answers,
+      questions: state.questions.map(q => ({ id: q.id, text: q.text, options: q.options, correctAnswer: q.correctAnswer, difficulty: q.difficulty })),
+      testId: `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userEmail: user?.email,
+      userId: user?.id,
+      userName: user?.name
     };
     
+    // Store results in localStorage
+    const existingResults = JSON.parse(localStorage.getItem('testResults') || '[]');
+    const updatedResults = [results, ...existingResults]; // Add new result at the beginning
+    localStorage.setItem('testResults', JSON.stringify(updatedResults));
+    
+    // Also store in user's test history
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const userTestHistory = userData.testHistory || [];
+    const testAttempt = {
+      id: results.testId,
+      score: results.score,
+      correctAnswers: results.correctAnswers,
+      totalQuestions: results.totalQuestions,
+      timeTaken: results.timeTaken,
+      warnings: results.warnings,
+      completedAt: results.completedAt,
+      passed: results.passed
+    };
+    userData.testHistory = [testAttempt, ...userTestHistory];
+    localStorage.setItem('userData', JSON.stringify(userData));
+    
     dispatch({ type: 'COMPLETE_TEST', payload: results });
+    
+    // Navigate to results page
+    window.location.href = '/student/test-results';
     
     if (passed) {
       toast.success(`Congratulations! You passed with ${score}%`);

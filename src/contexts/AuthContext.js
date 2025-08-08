@@ -141,19 +141,19 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Admin authentication with credentials: Admin/Admin
-      if (username === 'Admin' && password === 'Admin') {
-        const user = {
-          id: 'admin_1',
-          username: 'Admin',
-          name: 'Administrator',
-          role: 'admin',
-        };
-        
-        const token = 'admin_token_' + Date.now();
+      const response = await fetch('http://localhost:5000/api/auth/admin-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const user = data.user;
+        const token = data.token;
         
         localStorage.setItem('authToken', token);
         localStorage.setItem('userType', 'admin');
@@ -167,11 +167,12 @@ export const AuthProvider = ({ children }) => {
         toast.success('Admin login successful!');
         return true;
       } else {
-        toast.error('Invalid credentials. Please try again.');
+        toast.error(data.error || 'Login failed. Please try again.');
         return false;
       }
       
     } catch (error) {
+      console.error('Admin login error:', error);
       toast.error('Login failed. Please try again.');
       return false;
     } finally {

@@ -21,6 +21,9 @@ import TermsAndConditions from './components/common/TermsAndConditions';
 import PaymentPage from './components/payment/PaymentPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import CustomCursor from './components/common/CustomCursor';
+import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
+import StudentProgress from './components/student/StudentProgress';
+import NotificationCenter from './components/common/NotificationCenter';
 
 // Styles
 import './index.css';
@@ -105,6 +108,22 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/student/progress" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <StudentProgress />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/student/notifications" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <NotificationCenter />
+                  </ProtectedRoute>
+                } 
+              />
               
               {/* Protected Admin Routes */}
               <Route 
@@ -112,6 +131,14 @@ function App() {
                 element={
                   <ProtectedRoute userType="admin">
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/analytics" 
+                element={
+                  <ProtectedRoute userType="admin">
+                    <AnalyticsDashboard />
                   </ProtectedRoute>
                 } 
               />

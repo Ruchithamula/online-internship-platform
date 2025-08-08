@@ -6,7 +6,8 @@ import {
   FaUser, 
   FaSignOutAlt,
   FaChartLine,
-  FaCertificate
+  FaCertificate,
+  FaBell
 } from 'react-icons/fa';
 import YugaYatraLogo from '../common/YugaYatraLogo';
 
@@ -29,6 +30,12 @@ const StudentNavigation = () => {
       description: 'Manage your profile'
     },
     {
+      name: 'Progress',
+      path: '/student/progress',
+      icon: FaChartLine,
+      description: 'Track your performance and achievements'
+    },
+    {
       name: 'Performance',
       path: '/student/performance',
       icon: FaChartLine,
@@ -39,6 +46,12 @@ const StudentNavigation = () => {
       path: '/student/certificates',
       icon: FaCertificate,
       description: 'Download certificates'
+    },
+    {
+      name: 'Notifications',
+      path: '/student/notifications',
+      icon: FaBell,
+      description: 'View notifications'
     }
   ];
 

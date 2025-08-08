@@ -60,160 +60,66 @@ const AdminDashboard = () => {
   const [showCandidateReport, setShowCandidateReport] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  // Mock data for demonstration
-  const [candidates] = useState([
-    {
-      id: 1,
-      email: 'student1@example.com',
-      name: 'John Doe',
-      attempts: 1,
-      bestScore: 85,
-      percentile: 92,
-      lastAttempt: '2024-01-15',
-      status: 'passed',
-      testStatus: 'completed',
-      paymentStatus: 'paid',
-      testsEnabled: true,
-      tabSwitches: 0,
-      warnings: 0,
-      timeTaken: 25,
-      autoSubmitted: false
-    },
-    {
-      id: 2,
-      email: 'student2@example.com',
-      name: 'Jane Smith',
-      attempts: 2,
-      bestScore: 78,
-      percentile: 85,
-      lastAttempt: '2024-01-14',
-      status: 'passed',
-      testStatus: 'completed',
-      paymentStatus: 'paid',
-      testsEnabled: true,
-      tabSwitches: 1,
-      warnings: 0,
-      timeTaken: 28,
-      autoSubmitted: false
-    },
-    {
-      id: 3,
-      email: 'student3@example.com',
-      name: 'Mike Johnson',
-      attempts: 1,
-      bestScore: 45,
-      percentile: 35,
-      lastAttempt: '2024-01-13',
-      status: 'failed',
-      testStatus: 'completed',
-      paymentStatus: 'paid',
-      testsEnabled: false,
-      tabSwitches: 3,
-      warnings: 2,
-      timeTaken: 15,
-      autoSubmitted: true
-    },
-    {
-      id: 4,
-      email: 'student4@example.com',
-      name: 'Sarah Wilson',
-      attempts: 3,
-      bestScore: 92,
-      percentile: 98,
-      lastAttempt: '2024-01-12',
-      status: 'passed',
-      testStatus: 'completed',
-      paymentStatus: 'paid',
-      testsEnabled: true,
-      tabSwitches: 0,
-      warnings: 0,
-      timeTaken: 30,
-      autoSubmitted: false
-    },
-    {
-      id: 5,
-      email: 'student5@example.com',
-      name: 'David Brown',
-      attempts: 1,
-      bestScore: 55,
-      percentile: 45,
-      lastAttempt: '2024-01-11',
-      status: 'failed',
-      testStatus: 'completed',
-      paymentStatus: 'unpaid',
-      testsEnabled: false,
-      tabSwitches: 2,
-      warnings: 1,
-      timeTaken: 22,
-      autoSubmitted: false
-    },
-    {
-      id: 6,
-      email: 'student6@example.com',
-      name: 'Emily Davis',
-      attempts: 0,
-      bestScore: 0,
-      percentile: 0,
-      lastAttempt: '2024-01-10',
-      status: 'pending',
-      testStatus: 'pending',
-      paymentStatus: 'unpaid',
-      testsEnabled: false,
-      tabSwitches: 0,
-      warnings: 0,
-      timeTaken: 0,
-      autoSubmitted: false
-    },
-    {
-      id: 7,
-      email: 'student7@example.com',
-      name: 'Alex Thompson',
-      attempts: 0,
-      bestScore: 0,
-      percentile: 0,
-      lastAttempt: '2024-01-09',
-      status: 'pending',
-      testStatus: 'pending',
-      paymentStatus: 'paid',
-      testsEnabled: true,
-      tabSwitches: 0,
-      warnings: 0,
-      timeTaken: 0,
-      autoSubmitted: false
-    }
-  ]);
+  // State for real data
+  const [candidates, setCandidates] = useState([]);
+  const [meritList, setMeritList] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [questions] = useState([
-    {
-      id: 1,
-      question: "What is the capital of India?",
-      options: ["Mumbai", "Delhi", "Kolkata", "Chennai"],
-      correctAnswer: 1,
-      difficulty: "easy",
-      category: "General Knowledge"
-    },
-    {
-      id: 2,
-      question: "Which programming language is known as the 'language of the web'?",
-      options: ["Python", "Java", "JavaScript", "C++"],
-      correctAnswer: 2,
-      difficulty: "moderate",
-      category: "Computer Science"
-    },
-    {
-      id: 3,
-      question: "What is the Heisenberg Uncertainty Principle?",
-      options: [
-        "You cannot simultaneously know the position and momentum of a particle",
-        "Energy cannot be created or destroyed",
-        "Every action has an equal and opposite reaction",
-        "Light travels in straight lines"
-      ],
-      correctAnswer: 0,
-      difficulty: "expert",
-      category: "Physics"
+  // Fetch data from backend
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
+
+  const fetchAdminData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      // Fetch candidates
+      const candidatesResponse = await fetch('http://localhost:5000/api/admin/candidates', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (candidatesResponse.ok) {
+        const candidatesData = await candidatesResponse.json();
+        setCandidates(candidatesData);
+      }
+
+      // Fetch merit list
+      const meritResponse = await fetch('http://localhost:5000/api/admin/merit-list', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (meritResponse.ok) {
+        const meritData = await meritResponse.json();
+        setMeritList(meritData);
+      }
+
+      // Fetch questions
+      const questionsResponse = await fetch('http://localhost:5000/api/questions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (questionsResponse.ok) {
+        const questionsData = await questionsResponse.json();
+        setQuestions(questionsData);
+      }
+
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      setError('Failed to load admin data');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const stats = {
     totalCandidates: candidates.length,
@@ -225,11 +131,6 @@ const AdminDashboard = () => {
     totalWarnings: candidates.reduce((sum, c) => sum + c.warnings, 0),
     autoSubmittedTests: candidates.filter(c => c.autoSubmitted).length
   };
-
-  const meritList = candidates
-    .filter(c => c.status === 'passed')
-    .sort((a, b) => b.percentile - a.percentile)
-    .slice(0, Math.ceil(candidates.length * 0.1)); // Top 10%
 
   const handleToggleTests = () => {
     setTestsEnabled(!testsEnabled);
@@ -257,9 +158,59 @@ const AdminDashboard = () => {
     setShowQuestionModal(true);
   };
 
-  const handleDeleteQuestion = (questionId) => {
+  const handleDeleteQuestion = async (questionId) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
-      toast.success('Question deleted successfully!');
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:5000/api/questions/${questionId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          toast.success('Question deleted successfully');
+          fetchAdminData(); // Refresh data
+        } else {
+          toast.error('Failed to delete question');
+        }
+      } catch (error) {
+        console.error('Error deleting question:', error);
+        toast.error('Failed to delete question');
+      }
+    }
+  };
+
+  const handleSaveQuestion = async (questionData) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const url = editingQuestion 
+        ? `http://localhost:5000/api/questions/${editingQuestion._id}`
+        : 'http://localhost:5000/api/questions';
+      
+      const method = editingQuestion ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(questionData)
+      });
+
+      if (response.ok) {
+        toast.success(editingQuestion ? 'Question updated successfully' : 'Question added successfully');
+        setShowQuestionModal(false);
+        fetchAdminData(); // Refresh data
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to save question');
+      }
+    } catch (error) {
+      console.error('Error saving question:', error);
+      toast.error('Failed to save question');
     }
   };
 
@@ -366,6 +317,34 @@ const AdminDashboard = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDownloadMenu, showExportMenu]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-light-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-primary-dark">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-light-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-primary-dark mb-4">{error}</p>
+          <button 
+            onClick={fetchAdminData}
+            className="btn-primary"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100">
       {/* Header */}
@@ -414,6 +393,14 @@ const AdminDashboard = () => {
               >
                 <FaHome className="mr-2" />
                 Home
+              </button>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={() => navigate('/admin/analytics')}
+                className="flex items-center text-[#6b7280] hover:text-[#f8b800] transition-colors duration-200 font-medium"
+              >
+                <FaChartBar className="mr-2" />
+                Analytics
               </button>
               <span className="text-gray-300">|</span>
               <span className="text-[#f8b800] font-medium">Admin Dashboard</span>

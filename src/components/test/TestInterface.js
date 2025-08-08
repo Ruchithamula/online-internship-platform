@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTest } from '../../contexts/TestContext';
-import { FaClock, FaExclamationTriangle, FaCheck, FaArrowLeft, FaArrowRight, FaSave } from 'react-icons/fa';
+import { FaClock, FaExclamationTriangle, FaCheck, FaArrowLeft, FaArrowRight, FaSave, FaCircle, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';
 
 const TestInterface = () => {
-  const navigate = useNavigate();
   const { 
     questions, 
     currentQuestionIndex, 
@@ -29,13 +27,7 @@ const TestInterface = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [showTabSwitchWarning, setShowTabSwitchWarning] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
-
-  // Redirect if test hasn't been started or no questions available
-  useEffect(() => {
-    if (!testStarted || questions.length === 0) {
-      navigate('/student/test-init');
-    }
-  }, [testStarted, questions.length, navigate]);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -43,10 +35,6 @@ const TestInterface = () => {
   useEffect(() => {
     if (timeRemaining <= 0) {
       completeTest();
-      // Navigate to results after a short delay
-      setTimeout(() => {
-        navigate('/student/results');
-      }, 1000);
       return;
     }
 
@@ -55,9 +43,9 @@ const TestInterface = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining, updateTimer, completeTest, navigate]);
+  }, [timeRemaining, updateTimer, completeTest]);
 
-  // Anti-cheating monitoring
+  // Enhanced anti-cheating monitoring
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -121,22 +109,32 @@ const TestInterface = () => {
     };
   }, [addWarning, lastActivity, tabSwitches, addTabSwitch]);
 
+  // Monitor warnings for auto-submit
+  useEffect(() => {
+    if (warnings >= 3) {
+      toast.error('⚠️ Maximum warnings (3/3) reached! Test will be submitted automatically.', {
+        duration: 5000,
+        icon: '🚨'
+      });
+    } else if (warnings > 0) {
+      toast.error(`⚠️ Warning ${warnings}/3: Suspicious activity detected!`, {
+        duration: 3000,
+        icon: '⚠️'
+      });
+    }
+  }, [warnings]);
+
   // Auto-save answers
   useEffect(() => {
     const autoSaveTimer = setInterval(() => {
-      if (selectedAnswer !== null && currentQuestion) {
-        submitAnswer(currentQuestion.id, selectedAnswer);
-        toast.success('Answer auto-saved', { duration: 2000 });
+      if (Object.keys(answers).length > 0) {
+        // Auto-save functionality
+        console.log('Auto-saving answers...');
       }
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearInterval(autoSaveTimer);
-  }, [selectedAnswer, currentQuestion, submitAnswer]);
-
-  // Set selected answer when question changes
-  useEffect(() => {
-    setSelectedAnswer(answers[currentQuestion?.id] || null);
-  }, [currentQuestion, answers]);
+  }, [answers]);
 
   const handleAnswerSelect = (answerIndex) => {
     setSelectedAnswer(answerIndex);
@@ -146,12 +144,14 @@ const TestInterface = () => {
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       nextQuestion();
+      setSelectedAnswer(answers[questions[currentQuestionIndex + 1]?.id] || null);
     }
   };
 
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
       prevQuestion();
+      setSelectedAnswer(answers[questions[currentQuestionIndex - 1]?.id] || null);
     }
   };
 
@@ -162,10 +162,6 @@ const TestInterface = () => {
   const confirmSubmit = () => {
     setShowWarning(false);
     completeTest();
-    // Navigate to results after a short delay
-    setTimeout(() => {
-      navigate('/student/results');
-    }, 1000);
   };
 
   const formatTime = (seconds) => {
@@ -178,27 +174,54 @@ const TestInterface = () => {
     return Object.keys(answers).length;
   };
 
-  if (!currentQuestion || questions.length === 0) {
+  const getQuestionStatus = (questionIndex) => {
+    const question = questions[questionIndex];
+    if (!question) return 'not_attempted';
+    
+    const hasAnswer = answers[question.id] !== undefined;
+    
+    if (questionIndex === currentQuestionIndex) {
+      return 'current';
+    } else if (hasAnswer) {
+      return 'answered';
+    } else {
+      return 'not_attempted';
+    }
+  };
+
+  const getQuestionColor = (status) => {
+    switch (status) {
+      case 'current':
+        return 'bg-blue-500 text-white';
+      case 'answered':
+        return 'bg-green-500 text-white';
+      case 'not_attempted':
+        return 'bg-gray-200 text-gray-600 hover:bg-gray-300';
+      default:
+        return 'bg-gray-200 text-gray-600';
+    }
+  };
+
+  if (!currentQuestion) {
     return (
       <div className="min-h-screen bg-light-bg flex items-center justify-center">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
           <p className="text-primary-dark">Loading test...</p>
-          <p className="text-sm text-gray-600 mt-2">Please wait while we prepare your questions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-light-bg test-container">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 test-container">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-lg border-b-2 border-gold-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <YugaYatraLogo className="w-10 h-10" showText={false} />
-              <h1 className="text-xl font-bold text-primary-dark ml-3">Web Development Assessment Test</h1>
+              <h1 className="text-xl font-bold text-primary-dark ml-3">Internship Assessment Test</h1>
             </div>
             
             {/* Tab Switch Warning */}
@@ -214,13 +237,13 @@ const TestInterface = () => {
             )}
             
             <div className="flex items-center space-x-4">
-                          {/* Tab Switch Counter */}
-            {tabSwitches > 0 && (
-              <div className="flex items-center text-red-600">
-                <FaExclamationTriangle className="mr-1" />
-                <span className="text-sm font-medium">Tab Switches: {tabSwitches}/3</span>
-              </div>
-            )}
+              {/* Tab Switch Counter */}
+              {tabSwitches > 0 && (
+                <div className="flex items-center text-red-600">
+                  <FaExclamationTriangle className="mr-1" />
+                  <span className="text-sm font-medium">Tab Switches: {tabSwitches}/3</span>
+                </div>
+              )}
               
               {/* Warnings */}
               {warnings > 0 && (
@@ -245,7 +268,7 @@ const TestInterface = () => {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Question Panel */}
           <div className="lg:col-span-3">
@@ -272,7 +295,7 @@ const TestInterface = () => {
               {/* Question */}
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-primary-dark mb-6">
-                  {currentQuestion.question}
+                  {currentQuestion.text || currentQuestion.question}
                 </h2>
 
                 {/* Options */}
@@ -334,50 +357,63 @@ const TestInterface = () => {
             </div>
           </div>
 
-          {/* Question Navigator */}
+          {/* Question Navigation Panel */}
           <div className="lg:col-span-1">
             <div className="card">
-              <h3 className="text-lg font-semibold text-primary-dark mb-4">Question Navigator</h3>
+              <h3 className="text-lg font-semibold text-primary-dark mb-4">Question Navigation</h3>
               
               <div className="grid grid-cols-5 gap-2 mb-4">
-                {questions.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToQuestion(index)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      index === currentQuestionIndex
-                        ? 'bg-primary-dark text-white'
-                        : answers[questions[index]?.id] !== undefined
-                        ? 'bg-success text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
+                {questions.map((question, index) => {
+                  const status = getQuestionStatus(index);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        goToQuestion(index);
+                        setSelectedAnswer(answers[question.id] || null);
+                      }}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${getQuestionColor(status)}`}
+                      title={`Question ${index + 1} - ${status}`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="space-y-2 text-sm">
+              {/* Legend */}
+              <div className="space-y-2 text-xs">
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-primary-dark rounded mr-2"></div>
-                  <span>Current Question</span>
+                  <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                  <span>Current</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-success rounded mr-2"></div>
+                  <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
                   <span>Answered</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
-                  <span>Unanswered</span>
+                  <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+                  <span>Not Attempted</span>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">Auto-save enabled</p>
-                  <div className="flex items-center justify-center text-success">
-                    <FaSave className="mr-1" />
-                    <span className="text-xs">Saving every 30s</span>
+              {/* Progress Summary */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="text-sm text-gray-600 mb-2">Progress Summary</div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Answered:</span>
+                    <span className="font-medium text-green-600">{getAnsweredCount()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Remaining:</span>
+                    <span className="font-medium text-gray-600">{questions.length - getAnsweredCount()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Progress:</span>
+                    <span className="font-medium text-blue-600">
+                      {Math.round((getAnsweredCount() / questions.length) * 100)}%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -386,34 +422,27 @@ const TestInterface = () => {
         </div>
       </div>
 
-      {/* Submit Warning Modal */}
+      {/* Submit Confirmation Modal */}
       {showWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <FaExclamationTriangle className="text-warning text-2xl mr-3" />
-                <h3 className="text-xl font-bold text-primary-dark">Confirm Submission</h3>
-              </div>
-              
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to submit your test? You cannot change your answers after submission.
-              </p>
-              
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowWarning(false)}
-                  className="btn-outline px-6 py-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSubmit}
-                  className="btn-secondary px-6 py-2"
-                >
-                  Submit Test
-                </button>
-              </div>
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-primary-dark mb-4">Confirm Test Submission</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to submit your test? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="btn-outline px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubmit}
+                className="btn-primary px-4 py-2"
+              >
+                Submit Test
+              </button>
             </div>
           </div>
         </div>

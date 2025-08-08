@@ -6,6 +6,10 @@ import {
   FaArrowLeft, 
   FaShieldAlt, 
   FaCheckCircle,
+<<<<<<< HEAD
+=======
+  FaInfoCircle,
+>>>>>>> 8468b6e3039846a76e07d3c4658db92eb67314de
   FaExclamationTriangle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';

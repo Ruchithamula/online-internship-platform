@@ -1,15 +1,38 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { FaGraduationCap, FaUserShield, FaClock, FaBars, FaTimes } from 'react-icons/fa';
 import { MdPayment } from 'react-icons/md';
+import { useAuth } from '../contexts/AuthContext';
 import YugaYatraLogo from './common/YugaYatraLogo';
 
 const HomePage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAuthenticated, userType, loading } = useAuth();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect authenticated users to their dashboards
+  if (isAuthenticated) {
+    if (userType === 'student') {
+      return <Navigate to="/student/dashboard" replace />;
+    } else if (userType === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -22,21 +45,30 @@ const HomePage = () => {
               <YugaYatraLogo className="w-16 h-16" showText={true} />
             </div>
             
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                Home
-              </Link>
-              <Link to="/terms-conditions" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                Terms & Conditions
-              </Link>
-              <Link to="/student/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                Student Login
-              </Link>
-              <Link to="/admin/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                Admin Login
-              </Link>
-            </nav>
+                         {/* Desktop Navigation */}
+             <nav className="hidden md:flex space-x-8">
+               <Link to="/" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                 Home
+               </Link>
+               {!isAuthenticated && (
+                 <>
+                   <Link to="/student/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                     Student Login
+                   </Link>
+                   <Link to="/admin/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                     Admin Login
+                   </Link>
+                 </>
+               )}
+               {isAuthenticated && (
+                 <Link 
+                   to={userType === 'student' ? '/student/dashboard' : '/admin/dashboard'} 
+                   className="text-gray-700 hover:text-gold-600 transition-colors font-medium"
+                 >
+                   {userType === 'student' ? 'Student Dashboard' : 'Admin Dashboard'}
+                 </Link>
+               )}
+             </nav>
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
@@ -54,41 +86,47 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Mobile Navigation */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gold-200 shadow-lg">
-                <Link 
-                  to="/" 
-                  className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link 
-                  to="/terms-conditions" 
-                  className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Terms & Conditions
-                </Link>
-                <Link 
-                  to="/student/login" 
-                  className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Student Login
-                </Link>
-                <Link 
-                  to="/admin/login" 
-                  className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Admin Login
-                </Link>
-              </div>
-            </div>
-          )}
+                     {/* Mobile Navigation */}
+           {isMobileMenuOpen && (
+             <div className="md:hidden">
+               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gold-200 shadow-lg">
+                 <Link 
+                   to="/" 
+                   className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
+                   onClick={() => setIsMobileMenuOpen(false)}
+                 >
+                   Home
+                 </Link>
+                 {!isAuthenticated && (
+                   <>
+                     <Link 
+                       to="/student/login" 
+                       className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
+                       onClick={() => setIsMobileMenuOpen(false)}
+                     >
+                       Student Login
+                     </Link>
+                     <Link 
+                       to="/admin/login" 
+                       className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
+                       onClick={() => setIsMobileMenuOpen(false)}
+                     >
+                       Admin Login
+                     </Link>
+                   </>
+                 )}
+                 {isAuthenticated && (
+                   <Link 
+                     to={userType === 'student' ? '/student/dashboard' : '/admin/dashboard'} 
+                     className="block px-3 py-2 text-gray-700 hover:text-gold-600 hover:bg-gold-50 transition-colors font-medium rounded-md"
+                     onClick={() => setIsMobileMenuOpen(false)}
+                   >
+                     {userType === 'student' ? 'Student Dashboard' : 'Admin Dashboard'}
+                   </Link>
+                 )}
+               </div>
+             </div>
+           )}
         </div>
       </header>
 
@@ -129,23 +167,35 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Login Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              to="/student/login"
-              className="bg-gold-500 text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gold-600 hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-3"
-            >
-              <FaGraduationCap className="text-2xl" />
-              <span>Student Login</span>
-            </Link>
-            <Link
-              to="/admin/login"
-              className="bg-gray-800 text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gray-900 hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-3"
-            >
-              <FaUserShield className="text-2xl" />
-              <span>Admin Login</span>
-            </Link>
-          </div>
+                     {/* Login Buttons - Only show when not authenticated */}
+           {!isAuthenticated ? (
+             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+               <Link
+                 to="/student/login"
+                 className="bg-gold-500 text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gold-600 hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-3"
+               >
+                 <FaGraduationCap className="text-2xl" />
+                 <span>Student Login</span>
+               </Link>
+               <Link
+                 to="/admin/login"
+                 className="bg-gray-800 text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gray-900 hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-3"
+               >
+                 <FaUserShield className="text-2xl" />
+                 <span>Admin Login</span>
+               </Link>
+             </div>
+           ) : (
+             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+               <Link
+                 to={userType === 'student' ? '/student/dashboard' : '/admin/dashboard'}
+                 className="bg-gold-500 text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gold-600 hover:scale-105 transition-all duration-300 shadow-lg flex items-center space-x-3"
+               >
+                 <FaGraduationCap className="text-2xl" />
+                 <span>Continue to {userType === 'student' ? 'Student' : 'Admin'} Dashboard</span>
+               </Link>
+             </div>
+           )}
         </div>
       </section>
 
@@ -241,32 +291,41 @@ const HomePage = () => {
               </p>
             </div>
 
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-6">Quick Links</h4>
-              <ul className="space-y-3">
-                <li>
-                  <Link to="/" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/terms-conditions" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                    Terms & Conditions
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/student/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                    Student Login
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/admin/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
-                    Admin Login
-                  </Link>
-                </li>
-              </ul>
-            </div>
+                         {/* Quick Links */}
+             <div>
+               <h4 className="text-lg font-semibold text-gray-900 mb-6">Quick Links</h4>
+               <ul className="space-y-3">
+                 <li>
+                   <Link to="/" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                     Home
+                   </Link>
+                 </li>
+                 {!isAuthenticated && (
+                   <>
+                     <li>
+                       <Link to="/student/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                         Student Login
+                       </Link>
+                     </li>
+                     <li>
+                       <Link to="/admin/login" className="text-gray-700 hover:text-gold-600 transition-colors font-medium">
+                         Admin Login
+                       </Link>
+                     </li>
+                   </>
+                 )}
+                 {isAuthenticated && (
+                   <li>
+                     <Link 
+                       to={userType === 'student' ? '/student/dashboard' : '/admin/dashboard'} 
+                       className="text-gray-700 hover:text-gold-600 transition-colors font-medium"
+                     >
+                       {userType === 'student' ? 'Student Dashboard' : 'Admin Dashboard'}
+                     </Link>
+                   </li>
+                 )}
+               </ul>
+             </div>
 
             {/* Contact Info */}
             <div>

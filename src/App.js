@@ -7,15 +7,12 @@ import { TestProvider } from './contexts/TestContext';
 // Components
 import HomePage from './components/HomePage';
 import StudentLogin from './components/auth/StudentLogin';
+import StudentRegister from './components/auth/StudentRegister';
 import AdminLogin from './components/auth/AdminLogin';
 import StudentDashboard from './components/student/StudentDashboard';
-import StudentProfile from './components/student/StudentProfile';
-import StudentPerformance from './components/student/StudentPerformance';
 import AdminDashboard from './components/admin/AdminDashboard';
 import TestInterface from './components/test/TestInterface';
 import TestResults from './components/test/TestResults';
-import TestInitializer from './components/test/TestInitializer';
-import TestDebug from './components/test/TestDebug';
 import TermsAgreement from './components/common/TermsAgreement';
 import TermsAndConditions from './components/common/TermsAndConditions';
 import PaymentPage from './components/payment/PaymentPage';
@@ -25,6 +22,14 @@ import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import StudentProgress from './components/student/StudentProgress';
 import NotificationCenter from './components/common/NotificationCenter';
 
+// New Components
+import StudentProfile from './components/student/StudentProfile';
+import StudentPerformance from './components/student/StudentPerformance';
+import TestDebug from './components/test/TestDebug';
+import TestInitializer from './components/test/TestInitializer';
+import PostLoginFlow from './components/student/PostLoginFlow';
+import SessionProtection from './components/common/SessionProtection';
+
 // Styles
 import './index.css';
 
@@ -33,12 +38,14 @@ function App() {
     <Router>
       <AuthProvider>
         <TestProvider>
+          <SessionProtection />
           <div className="App min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 font-poppins">
             <CustomCursor />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/student/login" element={<StudentLogin />} />
+              <Route path="/student/register" element={<StudentRegister />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/terms" element={<TermsAgreement />} />
               <Route path="/terms-conditions" element={<TermsAndConditions />} />
@@ -49,6 +56,14 @@ function App() {
                 element={
                   <ProtectedRoute userType="student">
                     <StudentDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/student/setup" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <PostLoginFlow />
                   </ProtectedRoute>
                 } 
               />
@@ -77,18 +92,18 @@ function App() {
                 } 
               />
               <Route 
-                path="/student/test-init" 
-                element={
-                  <ProtectedRoute userType="student">
-                    <TestInitializer />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
                 path="/student/test" 
                 element={
                   <ProtectedRoute userType="student">
                     <TestInterface />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/student/test/initialize" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <TestInitializer />
                   </ProtectedRoute>
                 } 
               />
@@ -101,7 +116,17 @@ function App() {
                 } 
               />
               <Route 
-                path="/student/test-debug" 
+                path="/student/test-results" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <TestResults />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Debug Route (Development Only) */}
+              <Route 
+                path="/debug/test" 
                 element={
                   <ProtectedRoute userType="student">
                     <TestDebug />
@@ -168,6 +193,9 @@ function App() {
                 },
               }}
             />
+            
+            {/* Debug Component (Development Only) - Commented out for production */}
+            {/* <AuthDebug /> */}
           </div>
         </TestProvider>
       </AuthProvider>

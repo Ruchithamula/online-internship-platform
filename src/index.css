@@ -2,48 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import custom cursor styles */
-@import './styles/cursor.css';
 
-/* Custom Cursor Styles */
-.custom-cursor {
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  transition: all 0.1s ease-out;
-  will-change: transform, opacity;
-}
-
-.custom-cursor.hover {
-  transform: scale(1.5);
-  background: rgba(59, 130, 246, 0.8);
-}
-
-.custom-cursor.clicking {
-  transform: scale(0.8);
-  background: rgba(239, 68, 68, 0.8);
-}
-
-/* Enhanced cursor visibility for different screen sizes */
-@media (max-width: 768px) {
-  .custom-cursor {
-    transform: scale(1.2);
-  }
-}
-
-@media (min-width: 1920px) {
-  .custom-cursor {
-    transform: scale(1.1);
-  }
-}
-
-/* Ensure cursor is always visible on high-DPI displays */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .custom-cursor {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-}
 
 /* Download Menu Styles */
 .download-menu-container {

@@ -16,13 +16,14 @@ import {
   FaChartLine,
   FaDownload,
   FaEye,
-  FaStar
+  FaStar,
+  FaSignOutAlt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import StudentNavigation from './StudentNavigation';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
 
 const StudentProfile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -72,6 +73,7 @@ const StudentProfile = () => {
   ]);
 
   const [profileImage, setProfileImage] = useState(user?.profileImage || '/default-avatar.png');
+  const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
     if (!user?.profileComplete) {
@@ -88,6 +90,9 @@ const StudentProfile = () => {
     const success = await updateProfile(profileData);
     if (success) {
       setIsEditing(false);
+      // Redirect to dashboard after profile completion
+      navigate('/student/dashboard');
+      toast.success('Profile updated successfully! Redirecting to dashboard...');
     }
   };
 
@@ -150,11 +155,24 @@ const StudentProfile = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <StudentNavigation />
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100">
+      {/* Header with Logout */}
+      <header className="bg-white shadow-lg border-b-2 border-gold-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-primary-dark">Student Profile</h1>
+            <button
+              onClick={logout}
+              className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              <FaSignOutAlt className="mr-2" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Section */}
           <div className="lg:col-span-1">
@@ -397,7 +415,7 @@ const StudentProfile = () => {
                     className="btn-primary w-full"
                   >
                     <FaCheck className="mr-2" />
-                    Save Profile
+                    Next
                   </button>
                 </div>
               ) : (
@@ -476,38 +494,83 @@ const StudentProfile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Performance Overview */}
+            {/* Start Test Section */}
             <div className="card">
-              <h2 className="text-xl font-semibold text-primary-dark mb-6">Performance Overview</h2>
+              <h2 className="text-xl font-semibold text-primary-dark mb-6">Start Your Assessment Test</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <FaTrophy className="text-3xl text-blue-500 mx-auto mb-3" />
-                  <h3 className="text-2xl font-bold text-blue-800">{averageScore}%</h3>
-                  <p className="text-sm text-blue-600">Average Score</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="text-center p-6 bg-blue-50 rounded-lg border-2 border-blue-200 hover:shadow-lg transition-shadow">
+                  <div className="bg-blue-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold">35</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Total Questions</h3>
+                  <p className="text-sm text-blue-600">Comprehensive assessment covering software engineering concepts</p>
+                  <div className="mt-3 text-xs text-blue-500">
+                    • Multiple choice questions<br/>
+                    • Single correct answer<br/>
+                    • No negative marking
+                  </div>
                 </div>
                 
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <FaChartLine className="text-3xl text-green-500 mx-auto mb-3" />
-                  <h3 className="text-2xl font-bold text-green-800">{testHistory.length}</h3>
-                  <p className="text-sm text-green-600">Tests Taken</p>
+                <div className="text-center p-6 bg-green-50 rounded-lg border-2 border-green-200 hover:shadow-lg transition-shadow">
+                  <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-xl font-bold">30</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-800 mb-2">Time Limit</h3>
+                  <p className="text-sm text-green-600">Minutes to complete the entire assessment</p>
+                  <div className="mt-3 text-xs text-green-500">
+                    • Timer starts immediately<br/>
+                    • Auto-submit when time expires<br/>
+                    • No pause functionality
+                  </div>
                 </div>
                 
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <FaCertificate className="text-3xl text-purple-500 mx-auto mb-3" />
-                  <h3 className="text-2xl font-bold text-purple-800">
-                    {testHistory.filter(test => test.isPassed).length}
-                  </h3>
-                  <p className="text-sm text-purple-600">Certificates</p>
+                <div className="text-center p-6 bg-purple-50 rounded-lg border-2 border-purple-200 hover:shadow-lg transition-shadow">
+                  <div className="bg-purple-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-xl font-bold">60%</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-purple-800 mb-2">Passing Criteria</h3>
+                  <p className="text-sm text-purple-600">Minimum score required to pass the assessment</p>
+                  <div className="mt-3 text-xs text-purple-500">
+                    • Merit-based ranking<br/>
+                    • Certificate on completion<br/>
+                    • Detailed performance report
+                  </div>
                 </div>
-                
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <FaStar className="text-3xl text-yellow-500 mx-auto mb-3" />
-                  <h3 className="text-2xl font-bold text-yellow-800">
-                    {testHistory.length > 0 ? Math.round(testHistory.reduce((sum, test) => sum + test.percentile, 0) / testHistory.length) : 0}
-                  </h3>
-                  <p className="text-sm text-yellow-600">Avg Percentile</p>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <div className="bg-yellow-500 text-white p-2 rounded-full mr-3 mt-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 mb-2">Important Test Rules</h3>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      <li>• <strong>No electronic devices:</strong> Earphones, earbuds, or any external devices are strictly prohibited</li>
+                      <li>• <strong>No screenshots:</strong> Taking screenshots or screen recordings is not allowed</li>
+                      <li>• <strong>No tab switching:</strong> Stay on the test page throughout the assessment</li>
+                      <li>• <strong>Test fee:</strong> ₹250 + GST = ₹295 (non-refundable once started)</li>
+                      <li>• <strong>Maximum attempts:</strong> 3 attempts allowed per student</li>
+                      <li>• <strong>Anti-cheating:</strong> System monitors for suspicious activities</li>
+                    </ul>
+                  </div>
                 </div>
+              </div>
+
+              <div className="text-center">
+                <button
+                  onClick={() => window.location.href = '/student/dashboard'}
+                  className="btn-primary px-8 py-3 text-lg font-semibold hover:scale-105 transition-transform"
+                >
+                  <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Start Test Now
+                </button>
+                <p className="text-sm text-gray-500 mt-2">Click to begin your assessment test</p>
               </div>
             </div>
 

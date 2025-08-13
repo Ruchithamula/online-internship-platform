@@ -6,15 +6,11 @@ import {
   FaArrowLeft, 
   FaShieldAlt, 
   FaCheckCircle,
-<<<<<<< HEAD
-=======
-  FaInfoCircle,
->>>>>>> 8468b6e3039846a76e07d3c4658db92eb67314de
   FaExclamationTriangle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';
-import { RAZORPAY_CONFIG, calculateTotalAmount, getGSTBreakdown } from '../../config/razorpay';
+import { RAZORPAY_CONFIG, getGSTBreakdown } from '../../config/razorpay';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -25,7 +21,8 @@ const PaymentPage = () => {
   const [showTerms, setShowTerms] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
-  const [orderData, setOrderData] = useState(null);
+  // Keep last order if needed later
+  const [, setOrderData] = useState(null);
 
   const { testFee, gstAmount, total } = getGSTBreakdown();
 
@@ -47,21 +44,16 @@ const PaymentPage = () => {
   // Create payment order
   const createPaymentOrder = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/payments/create-order', {
+      const response = await fetch(`${RAZORPAY_CONFIG.API_BASE_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
-          amount: total * 100, // Convert to paise
-          currency: 'INR',
-          receipt: `test_${user?.id || 'user'}_${Date.now()}`,
-          notes: {
-            userId: user?.id,
-            userEmail: user?.email,
-            testType: 'internship_assessment'
-          }
+          // Backend multiplies by 100; send rupees here
+          amount: total,
+          currency: 'INR'
         })
       });
 
@@ -69,9 +61,12 @@ const PaymentPage = () => {
         throw new Error('Failed to create payment order');
       }
 
-      const order = await response.json();
-      setOrderData(order);
-      return order;
+      const result = await response.json();
+      if (!result.success || !result.data) {
+        throw new Error(result.message || 'Failed to create payment order');
+      }
+      setOrderData(result.data);
+      return result.data;
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
@@ -81,16 +76,16 @@ const PaymentPage = () => {
   // Verify payment
   const verifyPayment = async (paymentResponse) => {
     try {
-      const response = await fetch('http://localhost:5000/api/payments/verify', {
+      const response = await fetch(`${RAZORPAY_CONFIG.API_BASE_URL}/api/payment/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
-          razorpay_payment_id: paymentResponse.razorpay_payment_id,
-          razorpay_order_id: paymentResponse.razorpay_order_id,
-          razorpay_signature: paymentResponse.razorpay_signature
+          razorpayPaymentId: paymentResponse.razorpay_payment_id,
+          razorpayOrderId: paymentResponse.razorpay_order_id,
+          razorpaySignature: paymentResponse.razorpay_signature
         })
       });
 
@@ -99,7 +94,7 @@ const PaymentPage = () => {
       }
 
       const result = await response.json();
-      return result.verified;
+      return !!result.success;
     } catch (error) {
       console.error('Error verifying payment:', error);
       throw error;
@@ -125,13 +120,13 @@ const PaymentPage = () => {
       const order = await createPaymentOrder();
 
       const options = {
-        key: RAZORPAY_CONFIG.KEY_ID,
+        key: order.keyId || RAZORPAY_CONFIG.KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: 'OnlyInternship.in',
         description: `Internship Assessment Test Fee - ₹${testFee}`,
         image: '/logo.png',
-        order_id: order.id,
+        order_id: order.orderId || order.id,
         handler: async function (response) {
           try {
             setLoading(true);

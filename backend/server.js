@@ -65,9 +65,11 @@ const initializeDatabase = () => {
           correct_answer INTEGER NOT NULL,
           difficulty TEXT NOT NULL,
           category TEXT NOT NULL,
+          explanation TEXT,
           active BOOLEAN DEFAULT 1,
           created_by INTEGER,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -110,6 +112,17 @@ const initializeDatabase = () => {
           submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (test_id) REFERENCES tests (id),
           FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Random settings table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS random_settings (
+          id INTEGER PRIMARY KEY,
+          settings TEXT NOT NULL,
+          updated_by INTEGER,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (updated_by) REFERENCES users (id)
         )
       `);
 
@@ -383,12 +396,12 @@ app.get('/api/questions', authenticateToken, async (req, res) => {
 
 app.post('/api/questions', authenticateAdmin, async (req, res) => {
   try {
-    const { text, options, correctAnswer, difficulty, category } = req.body;
+    const { text, options, correctAnswer, difficulty, category, explanation } = req.body;
 
     db.run(`
-      INSERT INTO questions (text, options, correct_answer, difficulty, category, created_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [text, JSON.stringify(options), correctAnswer, difficulty, category, req.user.userId], function(err) {
+      INSERT INTO questions (text, options, correct_answer, difficulty, category, explanation, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [text, JSON.stringify(options), correctAnswer, difficulty, category, explanation || null, req.user.userId], function(err) {
       if (err) {
         console.error('Database error:', err);
         return res.status(500).json({ error: 'Failed to create question' });
@@ -400,12 +413,259 @@ app.post('/api/questions', authenticateAdmin, async (req, res) => {
         options,
         correctAnswer,
         difficulty,
-        category
+        category,
+        explanation
       });
     });
   } catch (error) {
     console.error('Error creating question:', error);
     res.status(500).json({ error: 'Failed to create question' });
+  }
+});
+
+// Update question
+app.put('/api/questions/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text, options, correctAnswer, difficulty, category, explanation, active } = req.body;
+
+    const updateFields = [];
+    const values = [];
+
+    if (text !== undefined) {
+      updateFields.push('text = ?');
+      values.push(text);
+    }
+    if (options !== undefined) {
+      updateFields.push('options = ?');
+      values.push(JSON.stringify(options));
+    }
+    if (correctAnswer !== undefined) {
+      updateFields.push('correct_answer = ?');
+      values.push(correctAnswer);
+    }
+    if (difficulty !== undefined) {
+      updateFields.push('difficulty = ?');
+      values.push(difficulty);
+    }
+    if (category !== undefined) {
+      updateFields.push('category = ?');
+      values.push(category);
+    }
+    if (explanation !== undefined) {
+      updateFields.push('explanation = ?');
+      values.push(explanation);
+    }
+    if (active !== undefined) {
+      updateFields.push('active = ?');
+      values.push(active ? 1 : 0);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    values.push(id);
+
+    db.run(`
+      UPDATE questions 
+      SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, values, function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to update question' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Question not found' });
+      }
+
+      res.json({ message: 'Question updated successfully' });
+    });
+  } catch (error) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ error: 'Failed to update question' });
+  }
+});
+
+// Delete question
+app.delete('/api/questions/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    db.run('DELETE FROM questions WHERE id = ?', [id], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to delete question' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Question not found' });
+      }
+
+      res.json({ message: 'Question deleted successfully' });
+    });
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    res.status(500).json({ error: 'Failed to delete question' });
+  }
+});
+
+// Random questions settings
+app.post('/api/admin/random-settings', authenticateAdmin, async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    // Store settings in database or file system
+    // For now, we'll store in a simple table
+    db.run(`
+      INSERT OR REPLACE INTO random_settings (id, settings, updated_by, updated_at)
+      VALUES (1, ?, ?, CURRENT_TIMESTAMP)
+    `, [JSON.stringify(settings), req.user.userId], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to save settings' });
+      }
+
+      res.json({ message: 'Settings saved successfully' });
+    });
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
+// Get random questions settings
+app.get('/api/admin/random-settings', authenticateAdmin, async (req, res) => {
+  try {
+    db.get('SELECT settings FROM random_settings WHERE id = 1', (err, row) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to fetch settings' });
+      }
+
+      if (!row) {
+        // Return default settings
+        return res.json({
+          totalQuestions: 35,
+          easyPercentage: 30,
+          moderatePercentage: 50,
+          expertPercentage: 20,
+          shuffleOptions: true,
+          preventDuplicates: true,
+          timeLimit: 60
+        });
+      }
+
+      res.json(JSON.parse(row.settings));
+    });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Generate random questions with advanced settings
+app.post('/api/admin/generate-random-questions', authenticateAdmin, async (req, res) => {
+  try {
+    const { 
+      totalQuestions = 35, 
+      easyPercentage = 30, 
+      moderatePercentage = 50, 
+      expertPercentage = 20,
+      categories = [],
+      shuffleOptions = true,
+      preventDuplicates = true
+    } = req.body;
+
+    // Calculate questions per difficulty
+    const easyCount = Math.round((easyPercentage / 100) * totalQuestions);
+    const moderateCount = Math.round((moderatePercentage / 100) * totalQuestions);
+    const expertCount = totalQuestions - easyCount - moderateCount;
+
+    // Build category filter
+    const categoryFilter = categories.length > 0 
+      ? `AND category IN (${categories.map(() => '?').join(',')})`
+      : '';
+
+    // Get questions by difficulty
+    const getQuestionsByDifficulty = (difficulty, limit) => {
+      return new Promise((resolve, reject) => {
+        const params = categories.length > 0 ? categories : [];
+        params.push(limit);
+        
+        db.all(`
+          SELECT * FROM questions 
+          WHERE active = 1 AND difficulty = ? ${categoryFilter}
+          ORDER BY RANDOM() 
+          LIMIT ?
+        `, [difficulty, ...params], (err, questions) => {
+          if (err) reject(err);
+          else resolve(questions);
+        });
+      });
+    };
+
+    const [easyQuestions, moderateQuestions, expertQuestions] = await Promise.all([
+      getQuestionsByDifficulty('easy', easyCount),
+      getQuestionsByDifficulty('moderate', moderateCount),
+      getQuestionsByDifficulty('expert', expertCount)
+    ]);
+
+    // Combine and shuffle questions
+    let allQuestions = [...easyQuestions, ...moderateQuestions, ...expertQuestions];
+    
+    // Shuffle the final array
+    for (let i = allQuestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+    }
+
+    // Shuffle options if requested
+    if (shuffleOptions) {
+      allQuestions = allQuestions.map(question => {
+        const options = JSON.parse(question.options);
+        const correctAnswer = options[question.correct_answer];
+        
+        // Shuffle options
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [options[i], options[j]] = [options[j], options[i]];
+        }
+        
+        // Update correct answer index
+        const newCorrectAnswerIndex = options.indexOf(correctAnswer);
+        
+        return {
+          ...question,
+          options: JSON.stringify(options),
+          correct_answer: newCorrectAnswerIndex
+        };
+      });
+    }
+
+    res.json({
+      questions: allQuestions.map(q => ({
+        id: q.id,
+        text: q.text,
+        options: JSON.parse(q.options),
+        correctAnswer: q.correct_answer,
+        difficulty: q.difficulty,
+        category: q.category,
+        explanation: q.explanation
+      })),
+      stats: {
+        total: allQuestions.length,
+        easy: easyQuestions.length,
+        moderate: moderateQuestions.length,
+        expert: expertQuestions.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generating random questions:', error);
+    res.status(500).json({ error: 'Failed to generate random questions' });
   }
 });
 

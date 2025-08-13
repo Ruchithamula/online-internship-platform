@@ -1,12 +1,9 @@
 // Razorpay Configuration
 export const RAZORPAY_CONFIG = {
-  // Test Keys - Replace with your actual Razorpay keys
-  KEY_ID: 'rzp_test_YOUR_KEY_HERE',
-  KEY_SECRET: 'YOUR_SECRET_HERE',
-  
-  // Production Keys (uncomment when going live)
-  // KEY_ID: 'rzp_live_YOUR_LIVE_KEY',
-  // KEY_SECRET: 'YOUR_LIVE_SECRET',
+  // Expose only the publishable key on the frontend
+  KEY_ID: process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_lpv28BMDD8bT0M',
+  // Do not use or set secret on frontend
+  KEY_SECRET: 'DO_NOT_PUT_SECRET_IN_FRONTEND',
   
   // Company Details
   COMPANY_NAME: 'OnlyInternship.in',

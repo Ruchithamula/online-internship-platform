@@ -123,25 +123,8 @@ const StudentDashboard = () => {
     
     // After accepting terms, check if payment is required
     if (!user?.paymentCompleted) {
-      // Show payment modal/confirmation
-      const confirmed = window.confirm(
-        'Payment is required to start the test. The test fee is ₹99. Do you want to proceed with payment?'
-      );
-      
-      if (confirmed) {
-        // Simulate payment process
-        toast.loading('Processing payment...', { duration: 2000 });
-        
-        // Simulate payment success after 2 seconds
-        setTimeout(() => {
-          // Update user payment status using AuthContext
-          updateProfile({ ...user, paymentCompleted: true });
-          
-          toast.success('Payment successful! Starting test...');
-          // Start the test after payment
-          startTestAndNavigate();
-        }, 2000);
-      }
+      // Redirect to secure Razorpay payment page (uses test credentials)
+      navigate('/student/payment');
       return;
     }
 

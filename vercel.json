@@ -23,11 +23,17 @@
       "dest": "/manifest.json"
     },
     {
+      "src": "/sitemap.xml",
+      "dest": "/sitemap.xml"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
-  "env": {
-    "REACT_APP_API_URL": "https://your-backend-url.vercel.app"
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
   }
 } 

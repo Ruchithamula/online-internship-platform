@@ -88,7 +88,8 @@ const AdminLogin = () => {
             Access the admin dashboard to manage tests and candidates
           </p>
           <div className="mt-2 text-xs text-gray-500">
-            <p>Demo: Username and Password are both "Admin"</p>
+            <p>Username: admin</p>
+            <p>Password: admin123</p>
           </div>
         </div>
 
@@ -136,7 +137,7 @@ const AdminLogin = () => {
                 />
               </div>
             </div>
-
+  
             <button
               type="submit"
               disabled={loading}

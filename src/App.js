@@ -17,6 +17,10 @@ import TermsAgreement from './components/common/TermsAgreement';
 import TermsAndConditions from './components/common/TermsAndConditions';
 import PaymentPage from './components/payment/PaymentPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import CustomCursor from './components/common/CustomCursor';
+import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
+import StudentProgress from './components/student/StudentProgress';
+import NotificationCenter from './components/common/NotificationCenter';
 
 // New Components
 import StudentProfile from './components/student/StudentProfile';
@@ -36,6 +40,7 @@ function App() {
         <TestProvider>
           <SessionProtection />
           <div className="App min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 font-poppins">
+            <CustomCursor />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
@@ -128,6 +133,22 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/student/progress" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <StudentProgress />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/student/notifications" 
+                element={
+                  <ProtectedRoute userType="student">
+                    <NotificationCenter />
+                  </ProtectedRoute>
+                } 
+              />
               
               {/* Protected Admin Routes */}
               <Route 
@@ -138,7 +159,14 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
-              
+              <Route 
+                path="/admin/analytics" 
+                element={
+                  <ProtectedRoute userType="admin">
+                    <AnalyticsDashboard />
+                  </ProtectedRoute>
+                } 
+              />
             </Routes>
             
             {/* Toast Notifications */}
@@ -166,8 +194,8 @@ function App() {
               }}
             />
             
-                         {/* Debug Component (Development Only) - Commented out for production */}
-             {/* <AuthDebug /> */}
+            {/* Debug Component (Development Only) - Commented out for production */}
+            {/* <AuthDebug /> */}
           </div>
         </TestProvider>
       </AuthProvider>

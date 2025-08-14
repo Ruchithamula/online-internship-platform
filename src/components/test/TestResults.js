@@ -182,6 +182,13 @@ const TestResults = () => {
                 <div className="text-sm opacity-90">{getPerformanceLabel(actualResults.score)}</div>
               </div>
             </div>
+            
+            {actualResults.tabSwitches >= 3 && (
+              <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                <FaExclamationTriangle className="mr-2" />
+                Test auto-submitted due to 3 tab switches
+              </div>
+            )}
           </div>
 
           {/* Detailed Results */}

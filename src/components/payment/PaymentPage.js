@@ -6,11 +6,11 @@ import {
   FaArrowLeft, 
   FaShieldAlt, 
   FaCheckCircle,
-  FaInfoCircle,
   FaExclamationTriangle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';
+import { RAZORPAY_CONFIG, getGSTBreakdown } from '../../config/razorpay';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -21,10 +21,10 @@ const PaymentPage = () => {
   const [showTerms, setShowTerms] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  // Keep last order if needed later
+  const [, setOrderData] = useState(null);
 
-  const testFee = 750;
-  const gst = Math.round(testFee * 0.18); // 18% GST
-  const totalAmount = testFee + gst;
+  const { testFee, gstAmount, total } = getGSTBreakdown();
 
   useEffect(() => {
     // Load Razorpay script
@@ -34,9 +34,72 @@ const PaymentPage = () => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
     };
   }, []);
+
+  // Create payment order
+  const createPaymentOrder = async () => {
+    try {
+      const response = await fetch(`${RAZORPAY_CONFIG.API_BASE_URL}/api/payment/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          // Backend multiplies by 100; send rupees here
+          amount: total,
+          currency: 'INR'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create payment order');
+      }
+
+      const result = await response.json();
+      if (!result.success || !result.data) {
+        throw new Error(result.message || 'Failed to create payment order');
+      }
+      setOrderData(result.data);
+      return result.data;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  };
+
+  // Verify payment
+  const verifyPayment = async (paymentResponse) => {
+    try {
+      const response = await fetch(`${RAZORPAY_CONFIG.API_BASE_URL}/api/payment/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          razorpayPaymentId: paymentResponse.razorpay_payment_id,
+          razorpayOrderId: paymentResponse.razorpay_order_id,
+          razorpaySignature: paymentResponse.razorpay_signature
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Payment verification failed');
+      }
+
+      const result = await response.json();
+      return !!result.success;
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      throw error;
+    }
+  };
 
   const handlePayment = async () => {
     if (!acceptedTerms) {
@@ -44,22 +107,42 @@ const PaymentPage = () => {
       return;
     }
 
+    if (!user) {
+      toast.error('Please login to proceed with payment');
+      navigate('/login');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Simulate API call to create order
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create payment order
+      const order = await createPaymentOrder();
 
       const options = {
-        key: 'rzp_test_YOUR_KEY_HERE', // Replace with actual Razorpay test key
-        amount: totalAmount * 100, // Amount in paise
-        currency: 'INR',
+        key: order.keyId || RAZORPAY_CONFIG.KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
         name: 'OnlyInternship.in',
-        description: 'Internship Assessment Test Fee - ₹750',
+        description: `Internship Assessment Test Fee - ₹${testFee}`,
         image: '/logo.png',
-        order_id: 'order_' + Date.now(),
-        handler: function (response) {
-          handlePaymentSuccess(response);
+        order_id: order.orderId || order.id,
+        handler: async function (response) {
+          try {
+            setLoading(true);
+            const verified = await verifyPayment(response);
+            
+            if (verified) {
+              handlePaymentSuccess(response);
+            } else {
+              toast.error('Payment verification failed. Please contact support.');
+              setLoading(false);
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast.error('Payment verification failed. Please contact support.');
+            setLoading(false);
+          }
         },
         prefill: {
           name: user?.name || '',
@@ -67,7 +150,9 @@ const PaymentPage = () => {
           contact: user?.phone || ''
         },
         notes: {
-          address: 'Yuga Yatra Retail (OPC) Private Limited'
+          address: 'Yuga Yatra Retail (OPC) Private Limited',
+          userId: user?.id,
+          testType: 'internship_assessment'
         },
         theme: {
           color: '#2C3E50'
@@ -75,6 +160,7 @@ const PaymentPage = () => {
         modal: {
           ondismiss: function() {
             setLoading(false);
+            toast.info('Payment cancelled');
           }
         }
       };
@@ -93,6 +179,14 @@ const PaymentPage = () => {
     setLoading(false);
     setPaymentCompleted(true);
     toast.success('Payment successful! Please review the terms and conditions.');
+    
+    // Store payment info in localStorage for reference
+    localStorage.setItem('paymentInfo', JSON.stringify({
+      paymentId: response.razorpay_payment_id,
+      orderId: response.razorpay_order_id,
+      amount: total,
+      timestamp: new Date().toISOString()
+    }));
   };
 
 
@@ -132,11 +226,11 @@ const PaymentPage = () => {
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-200">
                   <span className="text-gray-600">GST (18%)</span>
-                  <span className="font-medium">₹{gst}</span>
+                  <span className="font-medium">₹{gstAmount}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 text-lg font-semibold text-primary-dark">
                   <span>Total Amount</span>
-                  <span>₹{totalAmount}</span>
+                  <span>₹{total}</span>
                 </div>
               </div>
 
@@ -205,7 +299,7 @@ const PaymentPage = () => {
                       className="text-primary-dark mt-1 mr-3"
                     />
                     <div className="text-sm text-gray-700">
-                      I agree to proceed with the payment of ₹{totalAmount} for the internship assessment test.
+                      I agree to proceed with the payment of ₹{total} for the internship assessment test.
                     </div>
                   </label>
                 </div>
@@ -257,7 +351,7 @@ const PaymentPage = () => {
                   ) : (
                     <FaCreditCard className="mr-2" />
                   )}
-                  {loading ? 'Processing...' : `Pay ₹${totalAmount}`}
+                  {loading ? 'Processing...' : `Pay ₹${total}`}
                 </button>
               ) : (
                 <button

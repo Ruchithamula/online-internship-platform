@@ -1,8 +1,9 @@
 // Razorpay Payment Integration
 class RazorpayPayment {
   constructor() {
-    this.key = process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_YOUR_KEY_HERE';
-    this.secret = process.env.REACT_APP_RAZORPAY_SECRET || 'YOUR_SECRET_HERE';
+    this.key = process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_lpv28BMDD8bT0M';
+    // Never use secret on the frontend
+    this.secret = undefined;
     this.currency = 'INR';
     this.testFee = 250;
     this.gstRate = 0.18; // 18% GST

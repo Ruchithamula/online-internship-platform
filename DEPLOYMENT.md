@@ -129,7 +129,7 @@ npm start
    server {
        listen 80;
        server_name your-domain.com;
-
+       
        location / {
            root /var/www/internship-platform/build;
            try_files $uri $uri/ /index.html;

@@ -83,7 +83,7 @@ A comprehensive web-based internship assessment platform with advanced admin and
    npm start
    ```
    The backend will run on `http://localhost:5000`
-
+   
 5. **Start the frontend application**
    ```bash
    npm start

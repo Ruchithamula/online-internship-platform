@@ -5,8 +5,8 @@ import {
   FaUsers, 
   FaChartLine, 
   FaCog, 
-  FaSignOutAlt,
-  FaToggleOn,
+  FaSignOutAlt, 
+  FaToggleOn, 
   FaToggleOff,
   FaDownload,
   FaPlus,
@@ -257,18 +257,18 @@ const AdminDashboard = () => {
         {/* Tab Navigation */}
         <div className="flex space-x-1 bg-white p-1 rounded-lg shadow-sm mb-8">
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
               className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                activeTab === tab.id
+                  activeTab === tab.id
                   ? 'bg-yellow-500 text-white'
                   : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
-              }`}
-            >
+                }`}
+              >
               <tab.icon className="mr-2" />
-              {tab.label}
-            </button>
+                {tab.label}
+              </button>
           ))}
         </div>
 
@@ -306,18 +306,18 @@ const AdminDashboard = () => {
                     <p className="text-2xl font-bold text-gray-900">{stats.averageScore}%</p>
                     <p className="text-xs text-gray-500">{stats.passedTests} passed tests</p>
                   </div>
-                </div>
               </div>
-              
+            </div>
+
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center">
                   <FaCheckCircle className="text-purple-500 text-2xl mr-4" />
-                  <div>
+                          <div>
                     <p className="text-sm text-gray-600">Test Enabled</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.testEnabled}</p>
                     <p className="text-xs text-gray-500">{stats.testStarted} started tests</p>
                   </div>
-                </div>
+                          </div>
               </div>
             </div>
 
@@ -329,8 +329,8 @@ const AdminDashboard = () => {
                   <p className="text-sm text-gray-600">
                     Enable or disable test access for all students
                   </p>
-                </div>
-                <button
+          </div>
+                <button 
                   onClick={toggleGlobalTest}
                   className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                     globalTestEnabled
@@ -343,19 +343,19 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </div>
-
+            
             {/* Recent Candidates */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Recent Candidates</h3>
-                <button
+                        <button
                   onClick={() => setActiveTab('candidates')}
                   className="text-primary-dark hover:text-accent-red transition-colors"
                 >
                   View All
-                </button>
-              </div>
-              
+                        </button>
+                    </div>
+
               <div className="space-y-4">
                 {candidates.slice(0, 5).map((candidate) => (
                   <div key={candidate.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -388,7 +388,7 @@ const AdminDashboard = () => {
                           : candidate.testStarted 
                             ? 'In Progress' 
                             : 'Not Started'}
-                      </span>
+                        </span>
                       <button
                         onClick={() => toggleCandidateTest(candidate.id)}
                         className={`p-2 rounded-lg transition-colors ${
@@ -399,7 +399,7 @@ const AdminDashboard = () => {
                         title={candidate.testEnabled ? 'Disable Test' : 'Enable Test'}
                       >
                         {candidate.testEnabled ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
+                        </button>
                     </div>
                   </div>
                 ))}
@@ -423,41 +423,41 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Export</h3>
               <div className="flex space-x-4">
-                <button
+                <button 
                   onClick={() => exportData('csv')}
                   className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                 >
-                  <FaDownload className="mr-2" />
+                <FaDownload className="mr-2" />
                   Export CSV
                 </button>
-                <button
+                      <button
                   onClick={() => exportData('json')}
                   className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                 >
                   <FaDownload className="mr-2" />
                   Export JSON
-                </button>
+              </button>
               </div>
             </div>
-
+            
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Question Management</h3>
               <div className="flex space-x-4">
-                <button
+              <button
                   onClick={() => toast.info('Question management feature coming soon!')}
                   className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                >
-                  <FaPlus className="mr-2" />
+              >
+                <FaPlus className="mr-2" />
                   Add Questions
-                </button>
-                <button
+                          </button>
+                          <button
                   onClick={() => toast.info('Question editing feature coming soon!')}
                   className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                >
+                          >
                   <FaEdit className="mr-2" />
                   Edit Questions
-                </button>
-              </div>
+                          </button>
+                        </div>
             </div>
           </div>
         )}

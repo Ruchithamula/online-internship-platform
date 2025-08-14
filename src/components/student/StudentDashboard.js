@@ -245,13 +245,13 @@ const StudentDashboard = () => {
                   <FaUser className="mr-2" />
                   Profile
                 </button>
-                <button
-                  onClick={logout}
+            <button
+              onClick={logout}
                   className="flex items-center px-4 py-2 text-gray-600 hover:text-red-600 transition-colors rounded-md"
-                >
-                  <FaSignOutAlt className="mr-2" />
-                  Logout
-                </button>
+            >
+              <FaSignOutAlt className="mr-2" />
+              Logout
+            </button>
               </div>
             </div>
           </div>
@@ -352,99 +352,99 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Side - Student Details */}
-            <div className="lg:col-span-1">
-              <div className="card">
-                <div className="flex items-center justify-between mb-6">
+          <div className="lg:col-span-1">
+            <div className="card">
+              <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-primary-dark">Student Information</h2>
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="text-accent-red hover:text-red-600 transition-colors"
+                >
+                  {isEditing ? <FaTimes /> : <FaEdit />}
+                </button>
+              </div>
+
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      className="input-field"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                      className="input-field"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      College/University *
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.college}
+                      onChange={(e) => setProfileData({ ...profileData, college: e.target.value })}
+                      className="input-field"
+                      placeholder="Enter your college/university"
+                    />
+                  </div>
                   <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="text-accent-red hover:text-red-600 transition-colors"
+                    onClick={handleProfileUpdate}
+                      className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
                   >
-                    {isEditing ? <FaTimes /> : <FaEdit />}
+                    <FaCheck className="mr-2" />
+                      Update Profile
                   </button>
                 </div>
-
-                {isEditing ? (
-                  <div className="space-y-4">
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <FaUser className="text-gray-400 mr-3" />
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.name}
-                        onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                        className="input-field"
-                        placeholder="Enter your full name"
-                      />
+                      <p className="text-sm text-gray-500">Name</p>
+                      <p className="font-medium">{user?.name || 'Not provided'}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number *
-                      </label>
-                      <input
-                        type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                        className="input-field"
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        College/University *
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.college}
-                        onChange={(e) => setProfileData({ ...profileData, college: e.target.value })}
-                        className="input-field"
-                        placeholder="Enter your college/university"
-                      />
-                    </div>
-                    <button
-                      onClick={handleProfileUpdate}
-                      className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
-                    >
-                      <FaCheck className="mr-2" />
-                      Update Profile
-                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <FaUser className="text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-500">Name</p>
-                        <p className="font-medium">{user?.name || 'Not provided'}</p>
-                      </div>
-                    </div>
                     
-                    <div className="flex items-center">
+                  <div className="flex items-center">
                       <FaEnvelope className="text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-500">Email</p>
-                        <p className="font-medium">{user?.email}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{user?.email}</p>
                     </div>
+                  </div>
                     
-                    <div className="flex items-center">
+                  <div className="flex items-center">
                       <FaPhone className="text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-500">Phone</p>
-                        <p className="font-medium">{user?.phone || 'Not provided'}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p className="font-medium">{user?.phone || 'Not provided'}</p>
                     </div>
+                  </div>
                     
-                    <div className="flex items-center">
+                  <div className="flex items-center">
                       <FaUniversity className="text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-500">College</p>
-                        <p className="font-medium">{user?.college || 'Not provided'}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm text-gray-500">College</p>
+                      <p className="font-medium">{user?.college || 'Not provided'}</p>
                     </div>
+                  </div>
                     
                     {user?.course && (
                       <div className="flex items-center">
@@ -465,13 +465,13 @@ const StudentDashboard = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
+          </div>
 
             {/* Right Side - Test Details */}
-            <div className="lg:col-span-2">
+          <div className="lg:col-span-2">
               <div className="card">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-primary-dark">Test Information</h2>
@@ -490,7 +490,7 @@ const StudentDashboard = () => {
                       <div>
                         <h3 className="font-semibold text-gray-900">Software Engineering Assessment</h3>
                         <p className="text-sm text-gray-600">35 questions • 30 minutes • 60% passing score</p>
-                      </div>
+                </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Status</p>
                         <p className={`font-medium ${
@@ -506,14 +506,14 @@ const StudentDashboard = () => {
                               ? 'In Progress'
                               : 'Not Started'}
                         </p>
-                      </div>
-                    </div>
                   </div>
+                </div>
+              </div>
 
                   {/* Test Actions */}
                   <div className="flex justify-center">
-                    <button
-                      onClick={handleStartTest}
+              <button
+                onClick={handleStartTest}
                       disabled={!globalTestEnabled || loading}
                       className={`btn-primary flex items-center px-8 py-3 text-lg ${
                         !globalTestEnabled || loading
@@ -523,10 +523,10 @@ const StudentDashboard = () => {
                     >
                       <FaPlay className="mr-3" />
                       {loading ? 'Starting Test...' : 'Start Test'}
-                    </button>
-                  </div>
+              </button>
+            </div>
 
-                  {/* Test History */}
+            {/* Test History */}
                   <div className="mt-8">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <FaHistory className="mr-2 text-yellow-600" />

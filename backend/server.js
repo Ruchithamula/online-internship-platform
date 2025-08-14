@@ -246,7 +246,7 @@ app.post('/api/auth/student-login', async (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
 
-      if (!user) {
+    if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
@@ -256,21 +256,21 @@ app.post('/api/auth/student-login', async (req, res) => {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      const token = jwt.sign(
+    const token = jwt.sign(
         { userId: user.id, email: user.email, role: 'student' },
         process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+      { expiresIn: '24h' }
+    );
 
-      res.json({
-        token,
-        user: {
+    res.json({
+      token,
+      user: {
           id: user.id,
-          email: user.email,
-          name: user.name,
+        email: user.email,
+        name: user.name,
           role: 'student',
           profileComplete: user.profile_complete || false
-        }
+      }
       });
     });
   } catch (error) {
@@ -293,30 +293,30 @@ app.post('/api/auth/admin-login', async (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
 
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-      const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
-      if (!isValidPassword) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-      const token = jwt.sign(
+    const token = jwt.sign(
         { userId: user.id, email: user.email, role: 'admin' },
         process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+      { expiresIn: '24h' }
+    );
 
-      res.json({
-        token,
-        user: {
+    res.json({
+      token,
+      user: {
           id: user.id,
-          email: user.email,
-          name: user.name,
-          role: 'admin'
-        }
+        email: user.email,
+        name: user.name,
+        role: 'admin'
+      }
       });
     });
   } catch (error) {
@@ -342,11 +342,11 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
       }
 
       if (this.changes === 0) {
-        return res.status(404).json({ error: 'User not found' });
-      }
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-      res.json({
-        user: {
+    res.json({
+      user: {
           id: userId,
           name,
           phone,
@@ -396,10 +396,10 @@ app.post('/api/questions', authenticateAdmin, async (req, res) => {
 
       res.status(201).json({
         id: this.lastID,
-        text,
-        options,
-        correctAnswer,
-        difficulty,
+      text,
+      options,
+      correctAnswer,
+      difficulty,
         category
       });
     });
@@ -433,10 +433,10 @@ app.post('/api/tests/start', authenticateToken, async (req, res) => {
       }
 
       if (result.count >= 3) {
-        return res.status(400).json({ error: 'Maximum attempts reached' });
-      }
+      return res.status(400).json({ error: 'Maximum attempts reached' });
+    }
 
-      // Generate test questions
+    // Generate test questions
       generateTestQuestions().then(questions => {
         // Create test
         db.run(`
@@ -463,15 +463,15 @@ app.post('/api/tests/start', authenticateToken, async (req, res) => {
               return res.status(500).json({ error: 'Failed to assign questions' });
             }
 
-            res.json({
+    res.json({
               testId,
-              questions: questions.map(q => ({
+      questions: questions.map(q => ({
                 id: q.id,
-                text: q.text,
+        text: q.text,
                 options: JSON.parse(q.options),
-                difficulty: q.difficulty,
-                category: q.category
-              }))
+        difficulty: q.difficulty,
+        category: q.category
+      }))
             });
           });
         });
@@ -496,8 +496,8 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
       }
 
       if (!test) {
-        return res.status(404).json({ error: 'Test not found' });
-      }
+      return res.status(404).json({ error: 'Test not found' });
+    }
 
       // Get test questions and calculate results
       db.all(`
@@ -510,18 +510,18 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
           return res.status(500).json({ error: 'Failed to fetch questions' });
         }
 
-        let correctAnswers = 0;
+    let correctAnswers = 0;
         questions.forEach(question => {
           const parsedOptions = JSON.parse(question.options);
           if (answers[question.id] === parsedOptions[question.correct_answer]) {
-            correctAnswers++;
-          }
-        });
+        correctAnswers++;
+      }
+    });
 
-        const score = Math.round((correctAnswers / questions.length) * 100);
-        const passed = score >= 60;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    const passed = score >= 60;
 
-        // Save result
+    // Save result
         db.run(`
           INSERT INTO results (test_id, user_id, score, correct_answers, total_questions, passed, time_taken, warnings, answers)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -531,18 +531,18 @@ app.post('/api/tests/:id/submit', authenticateToken, async (req, res) => {
             return res.status(500).json({ error: 'Failed to save result' });
           }
 
-          // Update test status
+    // Update test status
           db.run("UPDATE tests SET status = 'completed', end_time = CURRENT_TIMESTAMP WHERE id = ?", [id]);
 
-          res.json({
-            result: {
-              score,
-              correctAnswers,
-              totalQuestions: questions.length,
-              passed,
-              timeTaken,
-              warnings
-            }
+    res.json({
+      result: {
+        score,
+        correctAnswers,
+        totalQuestions: questions.length,
+        passed,
+        timeTaken,
+        warnings
+      }
           });
         });
       });
@@ -583,7 +583,7 @@ app.get('/api/admin/candidates', authenticateAdmin, async (req, res) => {
         return res.status(500).json({ error: 'Failed to fetch candidates' });
       }
 
-      res.json(candidates);
+    res.json(candidates);
     });
   } catch (error) {
     console.error('Error fetching candidates:', error);

@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Simulate API call
+      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Admin authentication with credentials: Admin/Admin
@@ -196,6 +196,7 @@ export const AuthProvider = ({ children }) => {
           username: 'Admin',
           name: 'Administrator',
           role: 'admin',
+          email: 'admin@onlyinternship.in'
         };
         
         const token = 'admin_token_' + Date.now();
@@ -220,6 +221,7 @@ export const AuthProvider = ({ children }) => {
       }
       
     } catch (error) {
+      console.error('Admin login error:', error);
       toast.error('Login failed. Please try again.');
       return false;
     } finally {

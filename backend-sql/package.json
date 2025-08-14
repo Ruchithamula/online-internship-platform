@@ -1,7 +1,7 @@
 {
-  "name": "onlyinternship-backend-sql",
+  "name": "onlyinternship-backend",
   "version": "1.0.0",
-  "description": "Backend API for OnlyInternship.in - Online Test Platform (SQLite Version)",
+  "description": "Backend API for OnlyInternship.in - Online Test Platform (MySQL Version)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,7 +16,7 @@
     "test",
     "platform",
     "razorpay",
-    "sqlite",
+    "mysql",
     "express"
   ],
   "author": "Yuga Yatra Retail (OPC) Private Limited",
@@ -41,7 +41,7 @@
     "nodemailer": "^6.9.4",
     "razorpay": "^2.8.6",
     "sharp": "^0.32.5",
-    "sqlite3": "^5.1.6",
+    "mysql2": "^3.6.0",
     "uuid": "^9.0.0",
     "winston": "^3.10.0"
   },

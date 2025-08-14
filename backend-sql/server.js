@@ -7,7 +7,7 @@ const morgan = require('morgan');
 const session = require('express-session');
 require('dotenv').config();
 
-const { testConnection } = require('./config/database-sqlite');
+const { testConnection } = require('./config/database-mysql');
 
 // Import routes
 const authRoutes = require('./routes/auth');

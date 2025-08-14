@@ -1,357 +1,157 @@
-# Deployment Guide - Online Internship Platform
+# 🚀 Deployment Guide
 
-This guide provides step-by-step instructions for deploying the Online Internship Platform to various environments.
+## Frontend Deployment (Vercel)
 
-## 🚀 Quick Start
+### ✅ Vercel Frontend Deployment (Recommended)
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- Git
-- A web server or cloud platform account
+1. **Connect GitHub Repository**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign in with GitHub
+   - Import your repository: `Ruchithamula/online-internship-platform`
 
-## 📦 Local Development Setup
+2. **Configure Build Settings**
+   - Framework Preset: `Create React App`
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+   - Install Command: `npm install`
 
-### 1. Clone and Install
-```bash
-git clone https://github.com/Ruchithamula/online-internship-platform1.git
-cd online-internship-platform1
-npm install
-cd backend && npm install && cd ..
-```
-
-### 2. Start Development Servers
-```bash
-# Terminal 1: Start Backend
-cd backend
-npm start
-
-# Terminal 2: Start Frontend
-npm start
-```
-
-### 3. Access Application
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-
-## ☁️ Cloud Deployment Options
-
-### Option 1: Heroku Deployment
-
-#### Backend Deployment
-1. **Create Heroku App**
-   ```bash
-   heroku create your-app-name-backend
+3. **Environment Variables**
+   ```
+   REACT_APP_API_URL=https://your-backend-url.com
    ```
 
-2. **Configure Environment Variables**
-   ```bash
-   heroku config:set NODE_ENV=production
-   heroku config:set JWT_SECRET=your_jwt_secret_here
-   heroku config:set PORT=5000
-   ```
+4. **Deploy**
+   - Click "Deploy"
+   - Vercel will automatically deploy on every push to main branch
 
-3. **Deploy Backend**
+### 🔧 Manual Vercel Deployment
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+vercel --prod
+```
+
+## Backend Deployment Options
+
+### Option 1: Railway (Recommended for Full-Stack)
+
+1. **Deploy Backend to Railway**
    ```bash
    cd backend
-   git init
-   git add .
-   git commit -m "Initial backend deployment"
-   heroku git:remote -a your-app-name-backend
+   # Follow Railway deployment guide
+   ```
+
+2. **Update Frontend Environment**
+   - Set `REACT_APP_API_URL` to your Railway backend URL
+
+### Option 2: Render
+
+1. **Deploy Backend to Render**
+   - Connect your GitHub repository
+   - Set build command: `npm install`
+   - Set start command: `npm start`
+   - Set environment variables
+
+2. **Update Frontend Environment**
+   - Set `REACT_APP_API_URL` to your Render backend URL
+
+### Option 3: Heroku
+
+1. **Deploy Backend to Heroku**
+   ```bash
+   cd backend
+   heroku create your-app-name
    git push heroku main
    ```
 
-#### Frontend Deployment
-1. **Build Production Version**
-   ```bash
-   npm run build
-   ```
+2. **Update Frontend Environment**
+   - Set `REACT_APP_API_URL` to your Heroku backend URL
 
-2. **Deploy to Netlify/Vercel**
-   - Connect your GitHub repository
-   - Set build command: `npm run build`
-   - Set publish directory: `build`
-   - Configure environment variables for API URL
+## Current Issues & Solutions
 
-### Option 2: Vercel Deployment
+### ❌ Common Vercel Errors
 
-#### Full Stack Deployment
-1. **Install Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
+1. **Build Failures**
+   - Ensure all dependencies are in `package.json`
+   - Check for missing environment variables
 
-2. **Deploy**
-   ```bash
-   vercel
-   ```
+2. **API Connection Errors**
+   - Backend must be deployed separately
+   - Update `REACT_APP_API_URL` environment variable
 
-3. **Configure Environment Variables**
-   - Go to Vercel Dashboard
-   - Set `REACT_APP_API_URL` to your backend URL
-   - Set `JWT_SECRET` for backend
+3. **Routing Issues**
+   - Vercel.json handles SPA routing
+   - All routes redirect to index.html
 
-### Option 3: AWS Deployment
+### ✅ Quick Fix Commands
 
-#### EC2 Instance Setup
-1. **Launch EC2 Instance**
-   - Choose Ubuntu Server
-   - Configure Security Groups (ports 22, 80, 443, 3000, 5000)
+```bash
+# Check build locally
+npm run build
 
-2. **Install Dependencies**
-   ```bash
-   sudo apt update
-   sudo apt install nodejs npm nginx
-   ```
+# Test production build
+npx serve -s build
 
-3. **Deploy Application**
-   ```bash
-   git clone https://github.com/Ruchithamula/online-internship-platform1.git
-   cd online-internship-platform1
-   npm install
-   cd backend && npm install
-   ```
+# Update dependencies
+npm update
 
-4. **Configure PM2**
-   ```bash
-   npm install -g pm2
-   pm2 start backend/server.js --name "internship-backend"
-   pm2 startup
-   pm2 save
-   ```
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
 
-5. **Configure Nginx**
-   ```bash
-   sudo nano /etc/nginx/sites-available/internship-platform
-   ```
+## Environment Variables
 
-   ```nginx
-   server {
-       listen 80;
-       server_name your-domain.com;
-
-       location / {
-           root /var/www/internship-platform/build;
-           try_files $uri $uri/ /index.html;
-       }
-
-       location /api {
-           proxy_pass http://localhost:5000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection 'upgrade';
-           proxy_set_header Host $host;
-           proxy_cache_bypass $http_upgrade;
-       }
-   }
-   ```
-
-6. **Enable Site**
-   ```bash
-   sudo ln -s /etc/nginx/sites-available/internship-platform /etc/nginx/sites-enabled/
-   sudo nginx -t
-   sudo systemctl restart nginx
-   ```
-
-## 🔧 Environment Configuration
-
-### Backend Environment Variables
+### Frontend (.env)
 ```env
-NODE_ENV=production
+REACT_APP_API_URL=https://your-backend-url.com
+REACT_APP_ENV=production
+```
+
+### Backend (.env)
+```env
 PORT=5000
-JWT_SECRET=your_secure_jwt_secret_here
+JWT_SECRET=your-secret-key
+FRONTEND_URL=https://your-frontend-url.vercel.app
 DATABASE_PATH=./database.sqlite
-CORS_ORIGIN=https://your-frontend-domain.com
 ```
 
-### Frontend Environment Variables
-```env
-REACT_APP_API_URL=https://your-backend-domain.com
-REACT_APP_ENVIRONMENT=production
-```
+## Database Setup
 
-## 🗄️ Database Setup
-
-### SQLite (Default)
-- Database file is automatically created
+### SQLite (Current)
+- Database file: `backend/database.sqlite`
+- Automatically created on first run
 - No additional setup required
-- Backup regularly for production
 
-### PostgreSQL (Optional)
-1. **Install PostgreSQL**
-2. **Create Database**
-   ```sql
-   CREATE DATABASE internship_platform;
-   CREATE USER internship_user WITH PASSWORD 'your_password';
-   GRANT ALL PRIVILEGES ON DATABASE internship_platform TO internship_user;
-   ```
+### MySQL (Optional)
+- Use `backend-sql/` directory
+- Follow `README-MYSQL-SETUP.md`
+- Requires separate MySQL hosting
 
-3. **Update Backend Configuration**
-   ```javascript
-   // Update database connection in server.js
-   const { Pool } = require('pg');
-   const pool = new Pool({
-     connectionString: process.env.DATABASE_URL,
-   });
-   ```
+## Monitoring & Debugging
 
-## 🔒 Security Configuration
+### Vercel Dashboard
+- View deployment logs
+- Check build status
+- Monitor performance
 
-### SSL/HTTPS Setup
-1. **Obtain SSL Certificate**
-   - Use Let's Encrypt (free)
-   - Or purchase from certificate authority
+### Backend Logs
+- Check your backend hosting platform logs
+- Monitor API response times
+- Debug database connections
 
-2. **Configure Nginx SSL**
-   ```nginx
-   server {
-       listen 443 ssl;
-       server_name your-domain.com;
-       
-       ssl_certificate /path/to/certificate.crt;
-       ssl_certificate_key /path/to/private.key;
-       
-       # ... rest of configuration
-   }
-   ```
+## Support
 
-### Security Headers
-```javascript
-// In backend/server.js
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
-```
-
-## 📊 Monitoring and Logging
-
-### Application Monitoring
-1. **PM2 Monitoring**
-   ```bash
-   pm2 monit
-   pm2 logs
-   ```
-
-2. **Nginx Logs**
-   ```bash
-   sudo tail -f /var/log/nginx/access.log
-   sudo tail -f /var/log/nginx/error.log
-   ```
-
-### Health Checks
-```javascript
-// Add to backend/server.js
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-```
-
-## 🔄 CI/CD Pipeline
-
-### GitHub Actions Workflow
-```yaml
-name: Deploy to Production
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        
-    - name: Install Dependencies
-      run: |
-        npm install
-        cd backend && npm install
-        
-    - name: Build Frontend
-      run: npm run build
-      
-    - name: Deploy to Server
-      run: |
-        # Add your deployment commands here
-        echo "Deploying to production..."
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **Port Already in Use**
-   ```bash
-   sudo lsof -i :5000
-   sudo kill -9 <PID>
-   ```
-
-2. **Permission Denied**
-   ```bash
-   sudo chown -R $USER:$USER /var/www/
-   sudo chmod -R 755 /var/www/
-   ```
-
-3. **Database Connection Issues**
-   ```bash
-   # Check SQLite database
-   sqlite3 database.sqlite ".tables"
-   ```
-
-4. **Build Failures**
-   ```bash
-   # Clear cache and reinstall
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-## 📞 Support
-
-For deployment issues:
-1. Check the logs: `pm2 logs` or `docker logs`
-2. Verify environment variables
-3. Test database connectivity
-4. Check firewall and security group settings
-5. Create an issue in the GitHub repository
-
-## 🔄 Backup Strategy
-
-### Database Backup
-```bash
-# Create backup script
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-cp database.sqlite backup/database_$DATE.sqlite
-```
-
-### File Backup
-```bash
-# Backup entire application
-tar -czf backup/app_$(date +%Y%m%d_%H%M%S).tar.gz .
-```
-
-### Automated Backups
-```bash
-# Add to crontab
-0 2 * * * /path/to/backup-script.sh
-```
+- **Vercel Issues**: Check Vercel dashboard logs
+- **Backend Issues**: Check your backend hosting platform
+- **Database Issues**: Verify connection strings and permissions
 
 ---
 
-**Note:** Always test your deployment in a staging environment before deploying to production. Keep your dependencies updated and monitor your application regularly for security updates. 
+**Note**: This is a full-stack application. The frontend (React) and backend (Node.js) must be deployed separately to different platforms. 

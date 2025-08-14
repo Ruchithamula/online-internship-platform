@@ -20,7 +20,7 @@ const TestResults = () => {
   const navigate = useNavigate();
   const { results, resetTest } = useTest();
   const { user } = useAuth();
-
+  
   // Get actual test results from localStorage
   const getLatestTestResult = () => {
     try {
@@ -163,7 +163,7 @@ const TestResults = () => {
                 <FaTimesCircle className="w-10 h-10 text-red-600" />
               </div>
             )}
-            
+
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               {actualResults.passed ? 'Congratulations!' : 'Test Completed'}
             </h2>
@@ -254,14 +254,14 @@ const TestResults = () => {
               <div className="flex items-center mb-3">
                 <FaExclamationTriangle className="text-orange-600 mr-3" />
                 <h3 className="font-semibold text-gray-900">Warnings</h3>
-              </div>
+                  </div>
               <div className="text-2xl font-bold text-orange-600">
                 {actualResults.warnings}
-              </div>
+                  </div>
               <div className="text-sm text-gray-600">suspicious activities</div>
               <div className="mt-2 text-xs text-orange-600 font-medium">
                 {actualResults.warnings >= 3 ? 'Test auto-submitted' : 'Within limits'}
-              </div>
+                </div>
             </div>
           </div>
 
@@ -330,7 +330,7 @@ const TestResults = () => {
                     (actualResults.timeTaken / 1800) * 100 < 90 ? 'text-yellow-600' : 'text-red-600'
                   }`}>
                     {Math.round((actualResults.timeTaken / 1800) * 100)}%
-                  </span>
+                        </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Avg Time per Question:</span>
@@ -339,18 +339,18 @@ const TestResults = () => {
                       ? formatTime(Math.round(actualResults.timeTaken / Object.keys(actualResults.answers || {}).length))
                       : 'N/A'
                     }
-                  </span>
-                </div>
-              </div>
-            </div>
+                        </span>
+                      </div>
+                      </div>
+                    </div>
 
             {/* Question Analysis */}
             <div>
               <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                 <FaCheckCircle className="mr-2 text-green-600" />
                 Question Analysis
-              </h4>
-              <div className="space-y-3">
+                    </h4>
+                    <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Questions Attempted:</span>
                   <span className="font-medium">{Object.keys(actualResults.answers || {}).length}</span>
@@ -378,11 +378,11 @@ const TestResults = () => {
                       ? Math.round((actualResults.correctAnswers / Object.keys(actualResults.answers || {}).length) * 100)
                       : 0
                     }%
-                  </span>
+                            </span>
                 </div>
-              </div>
-            </div>
-          </div>
+                          </div>
+                        </div>
+                    </div>
 
           {/* Performance Insights */}
           <div className="mt-6 pt-6 border-t border-gray-200">

@@ -139,6 +139,7 @@ export const AuthProvider = ({ children }) => {
         role: 'student',
         termsAccepted: false,
         profileComplete: false,
+        paymentCompleted: false, // Initialize payment status
         testCompleted: false,
         testStarted: false
       };
@@ -255,6 +256,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update payment status
+  const updatePaymentStatus = async (paymentCompleted = true) => {
+    try {
+      const updatedUser = { 
+        ...state.user, 
+        paymentCompleted,
+        paymentDate: paymentCompleted ? new Date().toISOString() : null
+      };
+      
+      localStorage.setItem('userData', JSON.stringify(updatedUser));
+      
+      dispatch({
+        type: 'SET_USER',
+        payload: { user: updatedUser, userType: state.userType },
+      });
+      
+      return true;
+      
+    } catch (error) {
+      console.error('Failed to update payment status:', error);
+      return false;
+    }
+  };
+
   // Register new student
   const registerStudent = async (userData) => {
     try {
@@ -358,6 +383,7 @@ export const AuthProvider = ({ children }) => {
     adminLogin,
     registerStudent,
     updateProfile,
+    updatePaymentStatus,
     logout,
     checkSessionTimeout,
     refreshSession,

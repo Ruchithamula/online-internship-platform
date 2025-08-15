@@ -14,7 +14,7 @@ import { RAZORPAY_CONFIG, getGSTBreakdown } from '../../config/razorpay';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updatePaymentStatus } = useAuth();
   
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
@@ -175,10 +175,17 @@ const PaymentPage = () => {
     }
   };
 
-  const handlePaymentSuccess = (response) => {
+  const handlePaymentSuccess = async (response) => {
     setLoading(false);
     setPaymentCompleted(true);
-    toast.success('Payment successful! Please review the terms and conditions.');
+    
+    // Update payment status in user object
+    const success = await updatePaymentStatus(true);
+    if (success) {
+      toast.success('Payment successful! Please review the terms and conditions.');
+    } else {
+      toast.error('Payment successful but failed to update status. Please contact support.');
+    }
     
     // Store payment info in localStorage for reference
     localStorage.setItem('paymentInfo', JSON.stringify({

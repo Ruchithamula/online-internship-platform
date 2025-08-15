@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTest } from '../../contexts/TestContext';
+import { initiateDirectPayment, loadRazorpayScript } from '../../utils/razorpay';
 import { 
   FaUser, 
   FaSignOutAlt, 
@@ -22,14 +23,15 @@ import {
   FaPlay,
   FaCheckCircle,
   FaTimesCircle,
-  FaCircle
+  FaCircle,
+  FaCreditCard
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import YugaYatraLogo from '../common/YugaYatraLogo';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, updatePaymentStatus } = useAuth();
   const { startTest, loading } = useTest();
   
   const [showTerms, setShowTerms] = useState(false);
@@ -114,21 +116,59 @@ const StudentDashboard = () => {
       return;
     }
 
+    // Check if payment is completed
+    if (!user?.paymentCompleted) {
+      toast.error('Payment is required before starting the test. Please complete the payment first.');
+      navigate('/student/payment');
+      return;
+    }
+
     // Show terms first
     setShowTerms(true);
+  };
+
+  const handleDirectPayment = async () => {
+    try {
+      // Load Razorpay script if not already loaded
+      await loadRazorpayScript();
+      
+      // Initiate direct payment
+      const success = await initiateDirectPayment(
+        user,
+        // onSuccess callback
+        async (response) => {
+          // Update payment status in user object
+          const success = await updatePaymentStatus(true);
+          if (success) {
+            toast.success('Payment completed! You can now start your test.');
+            // Optionally start test immediately after payment
+            setTimeout(() => {
+              handleStartTest();
+            }, 2000);
+          }
+        },
+        // onError callback
+        (error) => {
+          console.error('Payment error:', error);
+          if (error !== 'cancelled') {
+            toast.error('Payment failed. Please try again.');
+          }
+        }
+      );
+      
+      if (!success) {
+        toast.error('Failed to initialize payment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error in direct payment:', error);
+      toast.error('Payment initialization failed. Please try again.');
+    }
   };
 
   const handleAcceptTerms = async () => {
     setShowTerms(false);
     
-    // After accepting terms, check if payment is required
-    if (!user?.paymentCompleted) {
-      // Redirect to secure Razorpay payment page (uses test credentials)
-      navigate('/student/payment');
-      return;
-    }
-
-    // If payment is already completed, start test directly
+    // Payment is already checked in handleStartTest, so proceed directly
     startTestAndNavigate();
   };
 
@@ -473,7 +513,7 @@ const StudentDashboard = () => {
                       <div>
                         <h3 className="font-semibold text-gray-900">Software Engineering Assessment</h3>
                         <p className="text-sm text-gray-600">35 questions • 30 minutes • 60% passing score</p>
-                </div>
+                      </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Status</p>
                         <p className={`font-medium ${
@@ -489,14 +529,38 @@ const StudentDashboard = () => {
                               ? 'In Progress'
                               : 'Not Started'}
                         </p>
+                      </div>
+                    </div>
+                    
+                    {/* Payment Status */}
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <FaCreditCard className={`mr-2 ${user?.paymentCompleted ? 'text-green-600' : 'text-orange-600'}`} />
+                          <span className="text-sm text-gray-600">Payment Status:</span>
+                        </div>
+                        <span className={`text-sm font-medium ${
+                          user?.paymentCompleted ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                          {user?.paymentCompleted ? 'Completed' : 'Pending'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
                   {/* Test Actions */}
-                  <div className="flex justify-center">
-              <button
-                onClick={handleStartTest}
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    {!user?.paymentCompleted && (
+                      <button
+                        onClick={handleDirectPayment}
+                        className="btn-primary flex items-center px-8 py-3 text-lg hover:bg-yellow-600 hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                      >
+                        <FaCreditCard className="mr-3" />
+                        Pay & Start Test
+                      </button>
+                    )}
+                    <button
+                      onClick={handleStartTest}
                       disabled={!globalTestEnabled || loading}
                       className={`btn-primary flex items-center px-8 py-3 text-lg ${
                         !globalTestEnabled || loading
@@ -506,8 +570,8 @@ const StudentDashboard = () => {
                     >
                       <FaPlay className="mr-3" />
                       {loading ? 'Starting Test...' : 'Start Test'}
-              </button>
-            </div>
+                    </button>
+                  </div>
 
             {/* Test History */}
                   <div className="mt-8">
